@@ -205,8 +205,18 @@ async def get_demand_status(house_id: str, db: Session = Depends(get_db)):
         device_online = is_device_online(iot_status.get("last_update"))
     elif latest_demand:
         # Fall back to database - check if latest demand is recent (within 30 seconds)
-        time_diff = datetime.utcnow() - latest_demand.created_at
-        device_online = time_diff.total_seconds() < 30
+        try:
+            # Handle both timezone-aware and naive datetimes
+            demand_time = latest_demand.created_at
+            if demand_time.tzinfo is not None:
+                # Timezone-aware: convert to naive UTC
+                demand_time = demand_time.replace(tzinfo=None)
+            
+            time_diff = datetime.utcnow() - demand_time
+            device_online = time_diff.total_seconds() < 30
+        except Exception as e:
+            logger.warning(f"Error checking device online for {house_id}: {e}")
+            device_online = False
 
     # Current demand - prefer in-memory if available, else use latest database record
     current_demand_kwh = 0
