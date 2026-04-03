@@ -59,6 +59,7 @@ class DemandSubmit(BaseModel):
 class DemandResponse(BaseModel):
     """Response after demand submission."""
     demand_id: int
+    allocation_id: Optional[int] = None
     house_id: str
     demand_kwh: float
     allocation_status: str
@@ -66,6 +67,8 @@ class DemandResponse(BaseModel):
     grid_required_kwh: float
     ai_reasoning: str
     estimated_cost_inr: float
+    estimated_pool_cost_inr: Optional[float] = None
+    estimated_grid_cost_inr: Optional[float] = None
     sun_tokens_minted: float = 0.0
     blockchain_tx: Optional[str] = None
 

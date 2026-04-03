@@ -48,6 +48,7 @@ async def submit_demand(data: DemandSubmit, db: Session = Depends(get_db)):
             "estimated_grid_cost_inr": data.demand_kwh * 12,  # Assume 12 INR/kWh
             "sun_tokens_minted": 0,
             "blockchain_tx": None,
+            "allocation_id": None,
         }
 
     # ✅ Fix: mark demand as fulfilled so it stops counting in pool demand
@@ -61,6 +62,7 @@ async def submit_demand(data: DemandSubmit, db: Session = Depends(get_db)):
 
     return DemandResponse(
         demand_id=demand.id,
+        allocation_id=result.get("allocation_id"),
         house_id=data.house_id,
         demand_kwh=data.demand_kwh,
         allocation_status="matched" if result["grid_kwh"] == 0 else "partial",
@@ -68,6 +70,8 @@ async def submit_demand(data: DemandSubmit, db: Session = Depends(get_db)):
         grid_required_kwh=result["grid_kwh"],
         ai_reasoning=result["ai_reasoning"],
         estimated_cost_inr=result["estimated_pool_cost_inr"] + result["estimated_grid_cost_inr"],
+        estimated_pool_cost_inr=result["estimated_pool_cost_inr"],
+        estimated_grid_cost_inr=result["estimated_grid_cost_inr"],
         sun_tokens_minted=result.get("sun_tokens_minted", 0),
         blockchain_tx=result.get("blockchain_tx"),
     )
