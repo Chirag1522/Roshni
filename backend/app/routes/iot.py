@@ -20,7 +20,8 @@ logger = logging.getLogger(__name__)
 class IoTData(BaseModel):
     auth_token: str
     device_id: str
-    generation_kwh: float
+    generation_kwh: float = 0  # For seller (solar generation)
+    demand_kwh: float = 0  # For buyer (energy demand)
     house_id: str
     signal_strength: int
 
@@ -31,6 +32,142 @@ class IoTDemandData(BaseModel):
     demand_kwh: float
     house_id: str
     signal_strength: int = 0  # Optional signal strength from device
+
+
+@router.post("/update")
+async def unified_iot_update(data: IoTData, db: Session = Depends(get_db)):
+    """
+    UNIFIED ENDPOINT: Handles both seller (generation) and buyer (demand) IoT devices.
+    This endpoint is used by both ESP32 devices to report their status.
+    
+    - Seller sends: generation_kwh
+    - Buyer sends: demand_kwh (but uses same /update endpoint)
+    
+    Backend determines device type based on which field is provided.
+    """
+    # Auth check
+    if data.auth_token != "iot_secret_token_12345":
+        raise HTTPException(status_code=401, detail="Invalid auth token")
+
+    # Find house
+    house = db.query(House).filter(House.house_id == data.house_id).first()
+    if not house:
+        raise HTTPException(status_code=404, detail="House not found")
+
+    logger.info(f"[IoT/Update] Received from {data.device_id} ({data.house_id}): Gen={data.generation_kwh}, Demand={data.demand_kwh}")
+
+    # ========== SELLER LOGIC (Generation) ==========
+    if data.generation_kwh > 0:
+        logger.info(f"[IoT/Update] SELLER: {data.house_id} generating {data.generation_kwh} kWh")
+        
+        # Store generation record
+        record = GenerationRecord(
+            house_id=house.id,
+            generation_kwh=data.generation_kwh,
+            device_id=data.device_id,
+            signal_strength=data.signal_strength,
+        )
+        db.add(record)
+        db.commit()
+
+        # Update in-memory service
+        iot_service.update_device_status(
+            house_id=data.house_id,
+            device_id=data.device_id,
+            generation_kwh=data.generation_kwh,
+            signal_strength=data.signal_strength,
+        )
+
+        logger.info(f"[IoT/Update] ✅ Generation recorded and cached for {data.house_id}")
+
+        return {
+            "status": "generation_received",
+            "device_type": "seller",
+            "house_id": data.house_id,
+            "generation_kwh": data.generation_kwh,
+            "message": f"Generation updated: {data.generation_kwh} kWh",
+        }
+
+    # ========== BUYER LOGIC (Demand) ==========
+    elif data.demand_kwh > 0:
+        logger.info(f"[IoT/Update] BUYER: {data.house_id} demanding {data.demand_kwh} kWh")
+        
+        # Skip if demand is too low (noise filtering)
+        if data.demand_kwh < 0.1:
+            logger.info(f"[IoT/Update] Demand below threshold: {data.demand_kwh} kWh")
+            return {
+                "status": "skipped",
+                "device_type": "buyer",
+                "reason": "Demand below threshold",
+                "demand_kwh": data.demand_kwh,
+            }
+
+        # Record demand as pending
+        demand = DemandRecord(
+            house_id=house.id,
+            demand_kwh=data.demand_kwh,
+            priority_level=5,  # Normal priority (1-10 scale)
+            duration_hours=1.0,
+            status="pending",
+        )
+        db.add(demand)
+        db.commit()
+        db.refresh(demand)
+
+        logger.info(f"[IoT/Update] ✅ Demand record created: ID={demand.id}")
+
+        # Store in IoT service for real-time tracking
+        iot_service.update_buyer_demand(data.house_id, data.demand_kwh, data.device_id)
+        logger.info(f"[IoT/Update] ✅ Cached in-memory service for {data.house_id}")
+
+        # Run matching engine
+        try:
+            matching = MatchingEngine(db)
+            result = matching.match_demand(house.id, data.demand_kwh)
+            logger.info(f"[IoT/Update] ✅ Matching successful: Pool={result['pool_kwh']:.2f}, Grid={result['grid_kwh']:.2f}")
+        except Exception as e:
+            logger.error(f"[IoT/Update] Matching failed: {e}")
+            # Fallback: allocate all from grid
+            result = {
+                "pool_kwh": 0,
+                "grid_kwh": data.demand_kwh,
+                "ai_reasoning": "Fallback: matching failed, using grid",
+                "estimated_pool_cost_inr": 0,
+                "estimated_grid_cost_inr": data.demand_kwh * 12,
+                "sun_tokens_minted": 0,
+                "blockchain_tx": None,
+                "allocation_id": None,
+            }
+
+        # Update demand status based on result
+        demand.status = "fulfilled" if result["grid_kwh"] == 0 else "partial"
+        db.commit()
+
+        logger.info(f"[IoT/Update] ✅ Demand matched for {data.house_id}: Pool={result['pool_kwh']:.2f}kWh, Grid={result['grid_kwh']:.2f}kWh")
+
+        return {
+            "status": "demand_received",
+            "device_type": "buyer",
+            "demand_id": demand.id,
+            "allocation_id": result.get("allocation_id"),
+            "demand_kwh": data.demand_kwh,
+            "allocated_kwh": result["pool_kwh"],
+            "grid_required_kwh": result["grid_kwh"],
+            "allocation_status": "matched" if result["grid_kwh"] == 0 else "partial",
+            "ai_reasoning": result["ai_reasoning"],
+            "estimated_cost_inr": result["estimated_pool_cost_inr"] + result["estimated_grid_cost_inr"],
+            "estimated_pool_cost_inr": result["estimated_pool_cost_inr"],
+            "estimated_grid_cost_inr": result["estimated_grid_cost_inr"],
+            "sun_tokens_minted": result.get("sun_tokens_minted", 0),
+            "blockchain_tx": result.get("blockchain_tx"),
+        }
+
+    else:
+        logger.warning(f"[IoT/Update] Invalid request: No generation or demand data provided")
+        return {
+            "status": "error",
+            "message": "Either generation_kwh or demand_kwh must be > 0",
+        }
 
 
 @router.post("/test-generate")
