@@ -30,6 +30,7 @@ class IoTDemandData(BaseModel):
     device_id: str
     demand_kwh: float
     house_id: str
+    signal_strength: int = 0  # Optional signal strength from device
 
 
 @router.post("/test-generate")
@@ -123,6 +124,7 @@ async def submit_iot_demand(data: IoTDemandData, db: Session = Depends(get_db)):
             "estimated_grid_cost_inr": data.demand_kwh * 12,
             "sun_tokens_minted": 0,
             "blockchain_tx": None,
+            "allocation_id": None,
         }
 
     # Update demand status based on result
@@ -139,12 +141,16 @@ async def submit_iot_demand(data: IoTDemandData, db: Session = Depends(get_db)):
 
     return {
         "status": "matched",
+        "demand_id": demand.id,
+        "allocation_id": result.get("allocation_id"),
         "demand_kwh": data.demand_kwh,
         "allocated_kwh": result["pool_kwh"],
         "grid_required_kwh": result["grid_kwh"],
         "allocation_status": "matched" if result["grid_kwh"] == 0 else "partial",
         "ai_reasoning": result["ai_reasoning"],
-        "estimated_cost_inr": (result["pool_kwh"] * 9) + (result["grid_kwh"] * 12),
+        "estimated_cost_inr": result["estimated_pool_cost_inr"] + result["estimated_grid_cost_inr"],
+        "estimated_pool_cost_inr": result["estimated_pool_cost_inr"],
+        "estimated_grid_cost_inr": result["estimated_grid_cost_inr"],
         "sun_tokens_minted": result.get("sun_tokens_minted", 0),
         "blockchain_tx": result.get("blockchain_tx"),
     }
