@@ -307,7 +307,19 @@ async def get_demand_status(house_id: str, db: Session = Depends(get_db)):
             "allocation": None,
         }
 
-    # Get related allocation data
+    # ⚠️ If device is OFFLINE (no fresh data), don't show stale allocation
+    # This prevents confusion from old cached values
+    if not device_online and not iot_status:
+        logger.info(f"[GET] Device offline for {house_id} - returning empty demand instead of stale data")
+        return {
+            "house_id": house_id,
+            "current_demand_kwh": 0,
+            "device_online": False,
+            "last_update": last_update_timestamp,
+            "allocation": None,
+        }
+
+    # Get related allocation data (only if device is online or has in-memory cache)
     if latest_demand:
         allocation = (
             db.query(Allocation)
