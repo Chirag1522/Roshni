@@ -107,11 +107,9 @@ from app.services.iot_service import iot_service
 
 @app.post("/api/iot/update")
 async def update_iot(data: IoTData):
-    # log arrival immediately to aid debugging
-    logger.debug("IoT update endpoint called")
     logger.info(f"ESP32 DATA RECEIVED: {data.json()}")
 
-    # store the latest IoT reading using the IoT service
+    # ✅ 1. Update in-memory IoT status (for live UI)
     iot_service.update_device_status(
         data.house_id,
         data.device_id,
@@ -119,50 +117,64 @@ async def update_iot(data: IoTData):
         data.signal_strength
     )
 
-    # Update pool state with new generation data
+    # ✅ 2. Save to DATABASE (THIS WAS MISSING 🔥)
     try:
-        from app.database import get_db
-        from app.services.pool_engine import PoolEngine
-        from app.models import House
-        from sqlalchemy.orm import Session
-
-        # Get a database session
         db_generator = get_db()
         db: Session = next(db_generator)
 
         try:
             house = db.query(House).filter(House.house_id == data.house_id).first()
 
-            if house:
-                pool_engine = PoolEngine(db)
-                pool_state = pool_engine.update_pool_state(house.feeder_id)
-                logger.info(f"Updated pool state for feeder {house.feeder_code}: Supply={pool_state.current_supply_kwh:.2f}kWh, Demand={pool_state.current_demand_kwh:.2f}kWh")
-            else:
-                logger.warning(f"House {data.house_id} not found in database")
+            if not house:
+                logger.warning(f"❌ House not found: {data.house_id}")
+                return JSONResponse(
+                    status_code=404,
+                    content={"error": "House not found"}
+                )
+
+            # 🔥 Insert generation record
+            record = GenerationRecord(
+                house_id=house.id,  # IMPORTANT: numeric FK
+                generation_kwh=data.generation_kwh,
+                timestamp=datetime.utcnow(),
+                device_id=data.device_id,
+                signal_strength=data.signal_strength,
+                created_at=datetime.utcnow()
+            )
+
+            db.add(record)
+            db.commit()
+
+            logger.info("✅ Generation saved to DB")
+
+            # ✅ 3. Update pool state
+            pool_engine = PoolEngine(db)
+            pool_state = pool_engine.update_pool_state(house.feeder_id)
+
+            logger.info(
+                f"Pool updated → Supply={pool_state.current_supply_kwh:.2f}, "
+                f"Demand={pool_state.current_demand_kwh:.2f}"
+            )
+
         finally:
             db.close()
-    except Exception as e:
-        logger.error(f"Failed to update pool state: {e}")
 
-    # simulate pool status (since pool engine was removed)
-    # in a real implementation, this would come from pool calculations
+    except Exception as e:
+        logger.error(f"❌ DB error: {e}")
+
+    # ✅ 4. Response for ESP32
     import random
     allocation_status = random.choice(["sufficient", "allocating", "shortage"])
-    current_pool_supply = round(random.uniform(10.0, 20.0), 1)
-    current_pool_demand = round(random.uniform(8.0, 18.0), 1)
 
-    # proper response format that ESP32 expects for LED control
     response_payload = {
         "status": "recorded",
-        "allocation_status": allocation_status,  # controls LED: sufficient/green, allocating/yellow, shortage/red
-        "current_pool_supply": current_pool_supply,
-        "current_pool_demand": current_pool_demand,
+        "allocation_status": allocation_status,
+        "current_pool_supply": round(random.uniform(10.0, 20.0), 1),
+        "current_pool_demand": round(random.uniform(8.0, 18.0), 1),
         "message": f"Generation recorded. Pool status: {allocation_status}",
     }
-    # use JSONResponse to guarantee content-length header
-    from fastapi.responses import JSONResponse
-    return JSONResponse(content=response_payload)
 
+    return JSONResponse(content=response_payload)
 @app.get("/api/iot/status/{house_id}")
 async def get_iot_status(house_id: str):
     """Get the latest IoT device status for a house."""
