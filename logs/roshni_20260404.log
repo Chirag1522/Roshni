@@ -1,0 +1,204 @@
+[2026-04-04 02:51:56,870] app.database:28 - INFO - Initializing database...
+[2026-04-04 02:51:56,873] sqlalchemy.engine.Engine:1091 - INFO - BEGIN (implicit)
+[2026-04-04 02:51:56,874] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA main.table_info("feeders")
+[2026-04-04 02:51:56,874] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-04 02:51:56,875] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA main.table_info("houses")
+[2026-04-04 02:51:56,875] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-04 02:51:56,877] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA main.table_info("generation_records")
+[2026-04-04 02:51:56,877] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-04 02:51:56,877] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA main.table_info("demand_records")
+[2026-04-04 02:51:56,878] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-04 02:51:56,878] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA main.table_info("allocations")
+[2026-04-04 02:51:56,879] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-04 02:51:56,881] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA main.table_info("pool_states")
+[2026-04-04 02:51:56,881] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-04 02:51:56,881] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA main.table_info("daily_logs")
+[2026-04-04 02:51:56,882] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-04 02:51:56,882] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA main.table_info("monthly_bills")
+[2026-04-04 02:51:56,882] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-04 02:51:56,883] sqlalchemy.engine.Engine:1134 - INFO - COMMIT
+[2026-04-04 02:51:56,883] app.database:30 - INFO - Database initialized successfully
+[2026-04-04 02:51:56,883] main:30 - INFO - Environment: development
+[2026-04-04 02:51:56,883] main:31 - INFO - Debug mode: True
+[2026-04-04 02:52:45,143] app.database:28 - INFO - Initializing database...
+[2026-04-04 02:52:45,145] sqlalchemy.engine.Engine:1091 - INFO - BEGIN (implicit)
+[2026-04-04 02:52:45,145] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA main.table_info("feeders")
+[2026-04-04 02:52:45,145] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-04 02:52:45,146] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA main.table_info("houses")
+[2026-04-04 02:52:45,148] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-04 02:52:45,148] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA main.table_info("generation_records")
+[2026-04-04 02:52:45,148] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-04 02:52:45,149] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA main.table_info("demand_records")
+[2026-04-04 02:52:45,149] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-04 02:52:45,150] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA main.table_info("allocations")
+[2026-04-04 02:52:45,150] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-04 02:52:45,150] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA main.table_info("pool_states")
+[2026-04-04 02:52:45,150] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-04 02:52:45,151] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA main.table_info("daily_logs")
+[2026-04-04 02:52:45,151] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-04 02:52:45,152] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA main.table_info("monthly_bills")
+[2026-04-04 02:52:45,152] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-04 02:52:45,153] sqlalchemy.engine.Engine:1134 - INFO - COMMIT
+[2026-04-04 02:52:45,153] app.database:30 - INFO - Database initialized successfully
+[2026-04-04 02:52:45,153] main:30 - INFO - Environment: development
+[2026-04-04 02:52:45,153] main:31 - INFO - Debug mode: True
+[2026-04-04 02:54:42,230] app.database:28 - INFO - Initializing database...
+[2026-04-04 02:54:42,234] sqlalchemy.engine.Engine:1091 - INFO - BEGIN (implicit)
+[2026-04-04 02:54:42,234] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA main.table_info("feeders")
+[2026-04-04 02:54:42,234] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-04 02:54:42,237] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA main.table_info("houses")
+[2026-04-04 02:54:42,237] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-04 02:54:42,238] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA main.table_info("generation_records")
+[2026-04-04 02:54:42,238] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-04 02:54:42,239] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA main.table_info("demand_records")
+[2026-04-04 02:54:42,239] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-04 02:54:42,240] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA main.table_info("allocations")
+[2026-04-04 02:54:42,240] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-04 02:54:42,240] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA main.table_info("pool_states")
+[2026-04-04 02:54:42,241] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-04 02:54:42,241] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA main.table_info("daily_logs")
+[2026-04-04 02:54:42,241] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-04 02:54:42,243] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA main.table_info("monthly_bills")
+[2026-04-04 02:54:42,243] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-04 02:54:42,244] sqlalchemy.engine.Engine:1134 - INFO - COMMIT
+[2026-04-04 02:54:42,244] app.database:30 - INFO - Database initialized successfully
+[2026-04-04 02:54:42,244] main:30 - INFO - Environment: development
+[2026-04-04 02:54:42,244] main:31 - INFO - Debug mode: True
+[2026-04-04 03:02:44,496] app.database:28 - INFO - Initializing database...
+[2026-04-04 03:02:44,498] sqlalchemy.engine.Engine:1091 - INFO - BEGIN (implicit)
+[2026-04-04 03:02:44,498] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA main.table_info("feeders")
+[2026-04-04 03:02:44,498] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-04 03:02:44,500] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA main.table_info("houses")
+[2026-04-04 03:02:44,500] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-04 03:02:44,501] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA main.table_info("generation_records")
+[2026-04-04 03:02:44,501] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-04 03:02:44,501] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA main.table_info("demand_records")
+[2026-04-04 03:02:44,502] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-04 03:02:44,502] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA main.table_info("allocations")
+[2026-04-04 03:02:44,502] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-04 03:02:44,503] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA main.table_info("pool_states")
+[2026-04-04 03:02:44,503] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-04 03:02:44,504] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA main.table_info("daily_logs")
+[2026-04-04 03:02:44,504] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-04 03:02:44,505] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA main.table_info("monthly_bills")
+[2026-04-04 03:02:44,505] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-04 03:02:44,506] sqlalchemy.engine.Engine:1134 - INFO - COMMIT
+[2026-04-04 03:02:44,506] app.database:30 - INFO - Database initialized successfully
+[2026-04-04 03:02:44,507] main:30 - INFO - Environment: development
+[2026-04-04 03:02:44,507] main:31 - INFO - Debug mode: True
+[2026-04-04 03:03:14,131] app.database:28 - INFO - Initializing database...
+[2026-04-04 03:03:14,135] sqlalchemy.engine.Engine:1091 - INFO - BEGIN (implicit)
+[2026-04-04 03:03:14,135] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA main.table_info("feeders")
+[2026-04-04 03:03:14,135] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-04 03:03:14,137] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA main.table_info("houses")
+[2026-04-04 03:03:14,137] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-04 03:03:14,138] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA main.table_info("generation_records")
+[2026-04-04 03:03:14,139] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-04 03:03:14,139] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA main.table_info("demand_records")
+[2026-04-04 03:03:14,139] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-04 03:03:14,141] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA main.table_info("allocations")
+[2026-04-04 03:03:14,141] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-04 03:03:14,142] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA main.table_info("pool_states")
+[2026-04-04 03:03:14,142] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-04 03:03:14,143] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA main.table_info("daily_logs")
+[2026-04-04 03:03:14,143] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-04 03:03:14,143] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA main.table_info("monthly_bills")
+[2026-04-04 03:03:14,143] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-04 03:03:14,144] sqlalchemy.engine.Engine:1134 - INFO - COMMIT
+[2026-04-04 03:03:14,145] app.database:30 - INFO - Database initialized successfully
+[2026-04-04 03:03:14,145] main:30 - INFO - Environment: development
+[2026-04-04 03:03:14,145] main:31 - INFO - Debug mode: True
+[2026-04-04 03:03:20,556] sqlalchemy.engine.Engine:1091 - INFO - BEGIN (implicit)
+[2026-04-04 03:03:20,562] sqlalchemy.engine.Engine:1901 - INFO - SELECT houses.id AS houses_id, houses.house_id AS houses_house_id, houses.feeder_id AS houses_feeder_id, houses.prosumer_type AS houses_prosumer_type, houses.owner_name AS houses_owner_name, houses.phone AS houses_phone, houses.email AS houses_email, houses.algorand_address AS houses_algorand_address, houses.algorand_private_key AS houses_algorand_private_key, houses.opt_in_sun_asa AS houses_opt_in_sun_asa, houses.wallet_created_at AS houses_wallet_created_at, houses.solar_capacity_kw AS houses_solar_capacity_kw, houses.monthly_avg_consumption AS houses_monthly_avg_consumption, houses.current_month_generation_kwh AS houses_current_month_generation_kwh, houses.current_month_sun_minted AS houses_current_month_sun_minted, houses.current_month_sun_received AS houses_current_month_sun_received, houses.current_month_sun_transferred AS houses_current_month_sun_transferred, houses.is_active AS houses_is_active, houses.created_at AS houses_created_at, houses.updated_at AS houses_updated_at 
+FROM houses 
+WHERE houses.house_id = ?
+ LIMIT ? OFFSET ?
+[2026-04-04 03:03:20,562] sqlalchemy.engine.Engine:1906 - INFO - [generated in 0.00031s] ('HOUSE_FDR12_001', 1, 0)
+[2026-04-04 03:03:20,563] sqlalchemy.engine.Engine:1117 - INFO - ROLLBACK
+[2026-04-04 03:04:04,004] app.database:28 - INFO - Initializing database...
+[2026-04-04 03:04:04,007] sqlalchemy.engine.Engine:1091 - INFO - BEGIN (implicit)
+[2026-04-04 03:04:04,007] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA main.table_info("feeders")
+[2026-04-04 03:04:04,007] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-04 03:04:04,009] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA main.table_info("houses")
+[2026-04-04 03:04:04,009] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-04 03:04:04,010] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA main.table_info("generation_records")
+[2026-04-04 03:04:04,010] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-04 03:04:04,010] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA main.table_info("demand_records")
+[2026-04-04 03:04:04,011] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-04 03:04:04,011] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA main.table_info("allocations")
+[2026-04-04 03:04:04,011] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-04 03:04:04,012] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA main.table_info("pool_states")
+[2026-04-04 03:04:04,012] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-04 03:04:04,012] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA main.table_info("daily_logs")
+[2026-04-04 03:04:04,012] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-04 03:04:04,013] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA main.table_info("monthly_bills")
+[2026-04-04 03:04:04,013] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-04 03:04:04,014] sqlalchemy.engine.Engine:1134 - INFO - COMMIT
+[2026-04-04 03:04:04,014] app.database:30 - INFO - Database initialized successfully
+[2026-04-04 03:04:04,014] main:30 - INFO - Environment: development
+[2026-04-04 03:04:04,014] main:31 - INFO - Debug mode: True
+[2026-04-04 03:04:18,997] sqlalchemy.engine.Engine:1091 - INFO - BEGIN (implicit)
+[2026-04-04 03:04:18,997] sqlalchemy.engine.Engine:1901 - INFO - SELECT houses.id AS houses_id, houses.house_id AS houses_house_id, houses.feeder_id AS houses_feeder_id, houses.prosumer_type AS houses_prosumer_type, houses.owner_name AS houses_owner_name, houses.phone AS houses_phone, houses.email AS houses_email, houses.algorand_address AS houses_algorand_address, houses.algorand_private_key AS houses_algorand_private_key, houses.opt_in_sun_asa AS houses_opt_in_sun_asa, houses.wallet_created_at AS houses_wallet_created_at, houses.solar_capacity_kw AS houses_solar_capacity_kw, houses.monthly_avg_consumption AS houses_monthly_avg_consumption, houses.current_month_generation_kwh AS houses_current_month_generation_kwh, houses.current_month_sun_minted AS houses_current_month_sun_minted, houses.current_month_sun_received AS houses_current_month_sun_received, houses.current_month_sun_transferred AS houses_current_month_sun_transferred, houses.is_active AS houses_is_active, houses.created_at AS houses_created_at, houses.updated_at AS houses_updated_at 
+FROM houses 
+WHERE houses.house_id = ?
+ LIMIT ? OFFSET ?
+[2026-04-04 03:04:18,998] sqlalchemy.engine.Engine:1906 - INFO - [cached since 58.44s ago] ('HOUSE_FDR12_001', 1, 0)
+[2026-04-04 03:04:18,999] sqlalchemy.engine.Engine:1117 - INFO - ROLLBACK
+[2026-04-04 03:05:25,607] app.database:28 - INFO - Initializing database...
+[2026-04-04 03:05:25,609] sqlalchemy.engine.Engine:1091 - INFO - BEGIN (implicit)
+[2026-04-04 03:05:25,610] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA main.table_info("feeders")
+[2026-04-04 03:05:25,610] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-04 03:05:25,611] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA main.table_info("houses")
+[2026-04-04 03:05:25,611] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-04 03:05:25,612] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA main.table_info("generation_records")
+[2026-04-04 03:05:25,612] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-04 03:05:25,613] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA main.table_info("demand_records")
+[2026-04-04 03:05:25,613] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-04 03:05:25,613] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA main.table_info("allocations")
+[2026-04-04 03:05:25,614] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-04 03:05:25,614] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA main.table_info("pool_states")
+[2026-04-04 03:05:25,614] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-04 03:05:25,614] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA main.table_info("daily_logs")
+[2026-04-04 03:05:25,615] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-04 03:05:25,615] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA main.table_info("monthly_bills")
+[2026-04-04 03:05:25,615] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-04 03:05:25,616] sqlalchemy.engine.Engine:1134 - INFO - COMMIT
+[2026-04-04 03:05:25,616] app.database:30 - INFO - Database initialized successfully
+[2026-04-04 03:05:25,616] main:30 - INFO - Environment: development
+[2026-04-04 03:05:25,616] main:31 - INFO - Debug mode: True
+[2026-04-04 03:05:37,537] sqlalchemy.engine.Engine:1091 - INFO - BEGIN (implicit)
+[2026-04-04 03:05:37,538] sqlalchemy.engine.Engine:1901 - INFO - SELECT houses.id AS houses_id, houses.house_id AS houses_house_id, houses.feeder_id AS houses_feeder_id, houses.prosumer_type AS houses_prosumer_type, houses.owner_name AS houses_owner_name, houses.phone AS houses_phone, houses.email AS houses_email, houses.algorand_address AS houses_algorand_address, houses.algorand_private_key AS houses_algorand_private_key, houses.opt_in_sun_asa AS houses_opt_in_sun_asa, houses.wallet_created_at AS houses_wallet_created_at, houses.solar_capacity_kw AS houses_solar_capacity_kw, houses.monthly_avg_consumption AS houses_monthly_avg_consumption, houses.current_month_generation_kwh AS houses_current_month_generation_kwh, houses.current_month_sun_minted AS houses_current_month_sun_minted, houses.current_month_sun_received AS houses_current_month_sun_received, houses.current_month_sun_transferred AS houses_current_month_sun_transferred, houses.is_active AS houses_is_active, houses.created_at AS houses_created_at, houses.updated_at AS houses_updated_at 
+FROM houses 
+WHERE houses.house_id = ?
+ LIMIT ? OFFSET ?
+[2026-04-04 03:05:37,538] sqlalchemy.engine.Engine:1906 - INFO - [cached since 137s ago] ('HOUSE_FDR12_001', 1, 0)
+[2026-04-04 03:05:37,539] sqlalchemy.engine.Engine:1117 - INFO - ROLLBACK
+[2026-04-04 03:06:10,112] app.database:28 - INFO - Initializing database...
+[2026-04-04 03:06:10,114] sqlalchemy.engine.Engine:1091 - INFO - BEGIN (implicit)
+[2026-04-04 03:06:10,114] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA main.table_info("feeders")
+[2026-04-04 03:06:10,114] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-04 03:06:10,116] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA main.table_info("houses")
+[2026-04-04 03:06:10,116] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-04 03:06:10,117] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA main.table_info("generation_records")
+[2026-04-04 03:06:10,117] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-04 03:06:10,118] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA main.table_info("demand_records")
+[2026-04-04 03:06:10,118] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-04 03:06:10,118] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA main.table_info("allocations")
+[2026-04-04 03:06:10,118] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-04 03:06:10,119] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA main.table_info("pool_states")
+[2026-04-04 03:06:10,119] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-04 03:06:10,119] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA main.table_info("daily_logs")
+[2026-04-04 03:06:10,119] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-04 03:06:10,120] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA main.table_info("monthly_bills")
+[2026-04-04 03:06:10,120] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-04 03:06:10,120] sqlalchemy.engine.Engine:1134 - INFO - COMMIT
+[2026-04-04 03:06:10,120] app.database:30 - INFO - Database initialized successfully
+[2026-04-04 03:06:10,121] main:30 - INFO - Environment: development
+[2026-04-04 03:06:10,121] main:31 - INFO - Debug mode: True
+[2026-04-04 03:06:32,946] sqlalchemy.engine.Engine:1091 - INFO - BEGIN (implicit)
+[2026-04-04 03:06:32,947] sqlalchemy.engine.Engine:1901 - INFO - SELECT houses.id AS houses_id, houses.house_id AS houses_house_id, houses.feeder_id AS houses_feeder_id, houses.prosumer_type AS houses_prosumer_type, houses.owner_name AS houses_owner_name, houses.phone AS houses_phone, houses.email AS houses_email, houses.algorand_address AS houses_algorand_address, houses.algorand_private_key AS houses_algorand_private_key, houses.opt_in_sun_asa AS houses_opt_in_sun_asa, houses.wallet_created_at AS houses_wallet_created_at, houses.solar_capacity_kw AS houses_solar_capacity_kw, houses.monthly_avg_consumption AS houses_monthly_avg_consumption, houses.current_month_generation_kwh AS houses_current_month_generation_kwh, houses.current_month_sun_minted AS houses_current_month_sun_minted, houses.current_month_sun_received AS houses_current_month_sun_received, houses.current_month_sun_transferred AS houses_current_month_sun_transferred, houses.is_active AS houses_is_active, houses.created_at AS houses_created_at, houses.updated_at AS houses_updated_at 
+FROM houses 
+WHERE houses.house_id = ?
+ LIMIT ? OFFSET ?
+[2026-04-04 03:06:32,947] sqlalchemy.engine.Engine:1906 - INFO - [cached since 192.4s ago] ('HOUSE_FDR12_001', 1, 0)
+[2026-04-04 03:06:32,949] sqlalchemy.engine.Engine:1117 - INFO - ROLLBACK

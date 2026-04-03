@@ -44,10 +44,10 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# CORS Configuration
+# CORS Configuration  
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://roshni-f74j.onrender.com"],
+    allow_origins=["*"],  # Allow IoT devices and frontend
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
