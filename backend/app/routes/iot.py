@@ -129,6 +129,19 @@ async def submit_iot_demand(data: IoTDemandData, db: Session = Depends(get_db)):
     demand.status = "fulfilled" if result["grid_kwh"] == 0 else "partial"
     db.commit()
 
+    # Save allocation to database
+    allocation = Allocation(
+        house_id=house.id,
+        allocated_kwh=result["pool_kwh"],
+        source_type="pool" if result["grid_kwh"] == 0 else "hybrid",
+        status="confirmed",
+        ai_reasoning=result["ai_reasoning"],
+        transaction_hash=result.get("blockchain_tx"),
+    )
+    db.add(allocation)
+    db.commit()
+    db.refresh(allocation)
+
     logger.info(
         f"IoT Demand matched: {data.house_id} → "
         f"Pool={result['pool_kwh']:.2f}kWh, Grid={result['grid_kwh']:.2f}kWh"
@@ -205,7 +218,7 @@ async def get_demand_status(house_id: str, db: Session = Depends(get_db)):
                 "allocated_kwh": allocated_kwh,
                 "grid_required_kwh": max(0, grid_required),
                 "status": latest_demand.status,
-                "ai_reasoning": allocation.ai_reasoning if allocation else "No allocation yet",
+                "ai_reasoning": allocation.ai_reasoning if allocation else "Matching in progress...",
                 "estimated_cost_inr": (allocated_kwh * 9) + (max(0, grid_required) * 12),
                 "sun_tokens_minted": 0,
                 "blockchain_tx": allocation.transaction_hash if allocation else None,

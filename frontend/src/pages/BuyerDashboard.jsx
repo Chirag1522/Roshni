@@ -17,12 +17,20 @@ export default function BuyerDashboard({ houseId }) {
     const pollDemand = async () => {
       try {
         const res = await api.get(`/iot/demand-status/${houseId}`)
+        console.log('[BUYER] Poll response:', res.data)
+        
         if (res.data) {
           setCurrentDemand(res.data.current_demand_kwh || 0)
-          setIotStatus('IoT device connected')
+          
+          if (res.data.device_online) {
+            setIotStatus('IoT device connected ✓')
+          } else {
+            setIotStatus('Waiting for IoT data...')
+          }
           
           // If allocation is available, update response
           if (res.data.allocation) {
+            console.log('[BUYER] Allocation received:', res.data.allocation)
             setResponse(res.data.allocation)
             
             // Refresh wallet if tokens were minted
@@ -39,6 +47,7 @@ export default function BuyerDashboard({ houseId }) {
           }
         }
       } catch (error) {
+        console.error('[BUYER] Poll error:', error)
         setIotStatus('Waiting for IoT data...')
         setCurrentDemand(0)
       }
@@ -86,6 +95,24 @@ export default function BuyerDashboard({ houseId }) {
         </small>
       </div>
 
+      {/* Matching in progress indicator */}
+      {currentDemand > 0 && !response && (
+        <div className="card" style={{ background: 'rgba(255, 140, 0, 0.05)', borderLeft: '4px solid #ff8c00' }}>
+          <h3>⚡ Matching Energy</h3>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <div style={{ fontSize: '2rem' }}>⏳</div>
+            <div>
+              <div style={{ fontWeight: 'bold', marginBottom: '0.25rem' }}>
+                Allocating {currentDemand.toFixed(2)} kWh from pool...
+              </div>
+              <div style={{ fontSize: '0.85rem', opacity: 0.7 }}>
+                Checking available solar energy • Calculating grid fallback • Processing allocation...
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Allocation result */}
       {response && (
         <div className="card" style={{ borderLeft: '4px solid #27ae60' }}>
@@ -96,42 +123,95 @@ export default function BuyerDashboard({ houseId }) {
             </button>
           </div>
 
-          <AIReasoningConsole reasoning={response.ai_reasoning} isVisible={true} />
+          {/* AI Reasoning */}
+          {response.ai_reasoning && (
+            <div style={{ background: 'rgba(100, 200, 255, 0.08)', padding: '1rem', borderRadius: '8px', marginBottom: '1.5rem', borderLeft: '3px solid #3498db' }}>
+              <div style={{ fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '0.5rem', color: '#3498db' }}>📊 AI Reasoning</div>
+              <div style={{ fontSize: '0.9rem', lineHeight: '1.5' }}>{response.ai_reasoning}</div>
+            </div>
+          )}
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
-            <div>
-              <div style={{ opacity: 0.7, fontSize: '0.9rem' }}>From Pool ☀️</div>
-              <div style={{ fontSize: '1.4rem', fontWeight: 'bold', color: '#27ae60' }}>
-                {response.allocated_kwh.toFixed(2)} kWh
+          {/* Pool vs Grid breakdown with visual bar */}
+          <div style={{ marginBottom: '1.5rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+              <div>
+                <div style={{ opacity: 0.7, fontSize: '0.9rem' }}>From Solar Pool ☀️</div>
+                <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#27ae60' }}>
+                  {response.allocated_kwh.toFixed(2)} kWh
+                </div>
+                <div style={{ fontSize: '0.85rem', color: '#27ae60', marginTop: '0.25rem' }}>
+                  {((response.allocated_kwh / response.demand_kwh) * 100).toFixed(0)}% of demand
+                </div>
+                <div style={{ fontSize: '0.85rem', color: '#27ae60' }}>
+                  ₹{(response.allocated_kwh * 9).toFixed(2)} @ ₹9/kWh
+                </div>
               </div>
-              <div style={{ fontSize: '0.85rem', color: '#27ae60' }}>
-                ₹{(response.allocated_kwh * 9).toFixed(2)} @ ₹9/kWh
+              <div>
+                <div style={{ opacity: 0.7, fontSize: '0.9rem' }}>From Grid (Fallback) 🔌</div>
+                <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#ff6b6b' }}>
+                  {response.grid_required_kwh.toFixed(2)} kWh
+                </div>
+                <div style={{ fontSize: '0.85rem', color: '#ff6b6b', marginTop: '0.25rem' }}>
+                  {((response.grid_required_kwh / response.demand_kwh) * 100).toFixed(0)}% of demand
+                </div>
+                <div style={{ fontSize: '0.85rem', color: '#ff6b6b' }}>
+                  ₹{(response.grid_required_kwh * 12).toFixed(2)} @ ₹12/kWh
+                </div>
               </div>
             </div>
-            <div>
-              <div style={{ opacity: 0.7, fontSize: '0.9rem' }}>From Grid (Fallback) 🔌</div>
-              <div style={{ fontSize: '1.4rem', fontWeight: 'bold', color: '#ff6b6b' }}>
-                {response.grid_required_kwh.toFixed(2)} kWh
+
+            {/* Visual allocation bar */}
+            <div style={{ 
+              background: '#ecf0f1', 
+              borderRadius: '8px', 
+              height: '30px', 
+              overflow: 'hidden',
+              display: 'flex'
+            }}>
+              <div style={{
+                width: `${((response.allocated_kwh / response.demand_kwh) * 100).toFixed(0)}%`,
+                background: 'linear-gradient(90deg, #2ecc71, #27ae60)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'white',
+                fontWeight: 'bold',
+                fontSize: '0.85rem',
+                transition: 'width 0.3s ease'
+              }}>
+                {response.allocated_kwh > 0.1 && `${((response.allocated_kwh / response.demand_kwh) * 100).toFixed(0)}% Pool`}
               </div>
-              <div style={{ fontSize: '0.85rem', color: '#ff6b6b' }}>
-                ₹{(response.grid_required_kwh * 12).toFixed(2)} @ ₹12/kWh
+              <div style={{
+                width: `${((response.grid_required_kwh / response.demand_kwh) * 100).toFixed(0)}%`,
+                background: 'linear-gradient(90deg, #e74c3c, #c0392b)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'white',
+                fontWeight: 'bold',
+                fontSize: '0.85rem',
+                transition: 'width 0.3s ease'
+              }}>
+                {response.grid_required_kwh > 0.1 && `${((response.grid_required_kwh / response.demand_kwh) * 100).toFixed(0)}% Grid`}
               </div>
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-            <div style={{ background: 'rgba(52,152,219,0.05)', padding: '1rem', borderRadius: '8px' }}>
-              <div style={{ fontSize: '0.85rem', opacity: 0.7 }}>Status</div>
-              <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#3498db' }}>
-                <span className={`status ${response.allocation_status}`}>
-                  {response.allocation_status.toUpperCase()}
-                </span>
+          {/* Status and Cost */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+            <div style={{ background: 'rgba(52,152,219,0.05)', padding: '1rem', borderRadius: '8px', borderLeft: '3px solid #3498db' }}>
+              <div style={{ fontSize: '0.85rem', opacity: 0.7, marginBottom: '0.5rem' }}>Allocation Status</div>
+              <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: response.allocation_status === 'matched' ? '#27ae60' : '#f39c12' }}>
+                {response.allocation_status === 'matched' ? '✓ 100% Pool' : '⚡ ' + response.allocation_status.toUpperCase()}
               </div>
             </div>
-            <div style={{ background: 'rgba(255,140,66,0.05)', padding: '1rem', borderRadius: '8px' }}>
-              <div style={{ fontSize: '0.85rem', opacity: 0.7 }}>Total Cost</div>
-              <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--primary)' }}>
+            <div style={{ background: 'rgba(255,140,66,0.05)', padding: '1rem', borderRadius: '8px', borderLeft: '3px solid #ff8c00' }}>
+              <div style={{ fontSize: '0.85rem', opacity: 0.7, marginBottom: '0.5rem' }}>Total Cost</div>
+              <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#ff8c00' }}>
                 ₹{response.estimated_cost_inr.toFixed(2)}
+              </div>
+              <div style={{ fontSize: '0.75rem', opacity: 0.7, marginTop: '0.25rem' }}>
+                Pool: ₹{(response.allocated_kwh * 9).toFixed(2)} + Grid: ₹{(response.grid_required_kwh * 12).toFixed(2)}
               </div>
             </div>
           </div>
