@@ -5,268 +5,323 @@ import AIReasoningConsole from '../components/AIReasoningConsole'
 import WalletDisplay from '../components/WalletDisplay'
 
 export default function BuyerDashboard({ houseId }) {
-  const [currentDemand, setCurrentDemand] = useState(0)
-  const [response, setResponse] = useState(null)
+  const [dashboard, setDashboard] = useState(null)
+  const [iotDemand, setIotDemand] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
   const [voiceEnabled] = useState(localStorage.getItem('voiceEnabled') !== 'false')
   const [isSpeaking, setIsSpeaking] = useState(false)
-  const [walletRefreshKey, setWalletRefreshKey] = useState(0)
-  const [iotStatus, setIotStatus] = useState('Waiting for IoT data...')
+  const [showAIReasoning, setShowAIReasoning] = useState(false)
 
-  // Fetch latest demand and allocation status every 5 seconds
+  // Fetch dashboard every 5 seconds
   useEffect(() => {
-    const pollDemand = async () => {
-      try {
-        const res = await api.get(`/iot/demand-status/${houseId}`)
-        console.log('[BUYER] Poll response:', res.data)
-        
-        if (res.data) {
-          setCurrentDemand(res.data.current_demand_kwh || 0)
-          
-          if (res.data.device_online) {
-            setIotStatus('IoT device connected ✓')
-          } else {
-            setIotStatus('Waiting for IoT data...')
-          }
-          
-          // If allocation is available, update response
-          if (res.data.allocation) {
-            console.log('[BUYER] Allocation received:', res.data.allocation)
-            setResponse(res.data.allocation)
-            
-            // Refresh wallet if tokens were minted
-            if (res.data.allocation.sun_tokens_minted > 0) {
-              setWalletRefreshKey(k => k + 1)
-            }
-            
-            // Narrate if voice enabled and newly matched
-            if (voiceEnabled && res.data.allocation.allocation_status === 'matched' && !isSpeaking) {
-              setIsSpeaking(true)
-              await voiceService.narrateAllocation(res.data.allocation)
-              setIsSpeaking(false)
-            }
-          }
-        }
-      } catch (error) {
-        console.error('[BUYER] Poll error:', error)
-        setIotStatus('Waiting for IoT data...')
-        setCurrentDemand(0)
-      }
-    }
-
-    const interval = setInterval(pollDemand, 5000)
-    pollDemand() // Initial call
+    fetchDashboard()
+    const interval = setInterval(() => {
+      fetchDashboard()
+    }, 5000)
     return () => clearInterval(interval)
-  }, [houseId, voiceEnabled, isSpeaking])
+  }, [houseId])
 
-  const speakResult = async () => {
-    if (response && voiceEnabled) {
+  // Fetch IoT demand status every 5 seconds
+  useEffect(() => {
+    if (dashboard && (dashboard.prosumer_type === 'buyer' || dashboard.prosumer_type === 'consumer')) {
+      fetchIotDemand()
+      const interval = setInterval(() => {
+        fetchIotDemand()
+      }, 5000)
+      return () => clearInterval(interval)
+    }
+  }, [houseId, dashboard?.prosumer_type])
+
+  const fetchDashboard = async () => {
+    try {
+      const response = await api.get(`/dashboard/${houseId}?t=${Date.now()}`)
+      console.log('[BUYER] Dashboard data:', response.data)
+      setDashboard(response.data)
+      setError(null)
+    } catch (err) {
+      console.error('[BUYER] Dashboard fetch error:', err)
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const fetchIotDemand = async () => {
+    try {
+      const response = await api.get(`/iot/demand-status/${houseId}?t=${Date.now()}`)
+      console.log('[BUYER] IoT demand data:', response.data)
+      setIotDemand(response.data)
+    } catch (err) {
+      console.error('[BUYER] IoT demand fetch error:', err)
+      setIotDemand(null)
+    }
+  }
+
+  const speakDashboard = async () => {
+    if (dashboard && voiceEnabled) {
       setIsSpeaking(true)
-      await voiceService.narrateAllocation(response)
+      await voiceService.narrateDashboard(dashboard, 'buyer')
       setIsSpeaking(false)
     }
   }
 
+  if (loading) return <div className="spinner" />
+  if (error) return <div className="alert danger">Error: {error}</div>
+  if (!dashboard) return <div className="alert info">No data available</div>
+
+  // Check if this is actually a seller/generator house
+  if (dashboard.prosumer_type === 'seller' || dashboard.prosumer_type === 'generator' || dashboard.prosumer_type === 'prosumer') {
+    return (
+      <div>
+        <h1>⚠️ Wrong Dashboard</h1>
+        <div className="alert info" style={{ marginTop: '1rem' }}>
+          <p><strong>{dashboard.house_id}</strong> is a <strong>Seller/Generator</strong> house.</p>
+          <p>Please switch to the <strong>Seller Dashboard</strong> to manage energy generation.</p>
+          <p>ℹ️ The Buyer Dashboard is for consumers and buyers only.</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Extract data
+  const currentDemand = iotDemand?.current_demand_kwh || 0
+  const allocation = iotDemand?.allocation || null
+  const allocatedKwh = allocation?.allocated_kwh || 0
+  const gridKwh = allocation?.grid_required_kwh || 0
+  const totalDemand = allocation?.demand_kwh || currentDemand
+
+  const todayDemandKwh = dashboard.demand_summary?.today_demand_kwh || 0
+  const allocationRate = allocation ? ((allocatedKwh / totalDemand) * 100) : 0
+  const gridDependency = allocation ? ((gridKwh / totalDemand) * 100) : 0
+
+  const savingsEstimate = allocatedKwh * 3 // ₹3 saved per kWh (₹12 grid - ₹9 pool)
+  const costEstimate = allocation?.estimated_cost_inr || 0
+
   return (
     <div>
-      <h1>🔌 Buyer Dashboard</h1>
-      <p style={{ color: '#888', marginBottom: '2rem' }}>
-        House: {houseId} | Automatic demand from IoT device
-      </p>
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+        <div>
+          <h1>🔌 Buyer Dashboard</h1>
+          <p style={{ color: '#888', marginBottom: 0 }}>
+            House: {dashboard.house_id} | Feeder: {dashboard.feeder_code}
+          </p>
+        </div>
+        <button onClick={speakDashboard} disabled={isSpeaking} className="voice-btn active">
+          {isSpeaking ? '🔊 Speaking...' : '🔊 Speak Summary'}
+        </button>
+      </div>
 
-      {/* IoT Status */}
-      <div className="card" style={{ background: 'rgba(52,152,219,0.05)', borderLeft: '4px solid #3498db' }}>
-        <h3>🔌 Live IoT Status</h3>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+      {/* Top metrics */}
+      <div className="grid grid-3">
+        <div className="metric-box info">
+          <div className="metric-label">Current Demand</div>
+          <div className="metric-value">
+            {currentDemand.toFixed(2)}
+          </div>
+          <div style={{ fontSize: '0.85rem' }}>kW (Live from IoT)</div>
+        </div>
+        <div className="metric-box success">
+          <div className="metric-label">From Pool</div>
+          <div className="metric-value">{allocatedKwh.toFixed(2)}</div>
+          <div style={{ fontSize: '0.85rem' }}>kWh (Renewable)</div>
+        </div>
+        <div className="metric-box">
+          <div className="metric-label">Cost Estimate</div>
+          <div className="metric-value">₹{costEstimate.toFixed(2)}</div>
+          <div style={{ fontSize: '0.85rem' }}>Today's allocation</div>
+        </div>
+      </div>
+
+      {/* Live IoT Status */}
+      <div className="card">
+        <h3>📱 Live Demand Status</h3>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem', marginBottom: '1.25rem' }}>
           <div>
-            <div style={{ opacity: 0.7, fontSize: '0.9rem' }}>Current Demand (from Potentiometer)</div>
-            <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#3498db' }}>
-              {currentDemand.toFixed(2)} kWh
+            <div style={{ opacity: 0.7, fontSize: '0.9rem' }}>Current Demand</div>
+            <div style={{ fontSize: '1.4rem', fontWeight: 'bold', color: '#3498db' }}>
+              {currentDemand.toFixed(2)} kW
+            </div>
+          </div>
+          <div>
+            <div style={{ opacity: 0.7, fontSize: '0.9rem' }}>From Pool</div>
+            <div style={{ fontSize: '1.4rem', fontWeight: 'bold', color: '#27ae60' }}>
+              {allocatedKwh.toFixed(2)} kWh
+            </div>
+          </div>
+          <div>
+            <div style={{ opacity: 0.7, fontSize: '0.9rem' }}>From Grid</div>
+            <div style={{ fontSize: '1.4rem', fontWeight: 'bold', color: '#ff6b6b' }}>
+              {gridKwh.toFixed(2)} kWh
             </div>
           </div>
           <div>
             <div style={{ opacity: 0.7, fontSize: '0.9rem' }}>Device Status</div>
-            <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: currentDemand > 0 ? '#27ae60' : '#95a5a6' }}>
-              {iotStatus}
+            <div style={{ fontSize: '1.4rem', fontWeight: 'bold', color: currentDemand > 0 ? '#27ae60' : '#888' }}>
+              {iotDemand?.device_online ? 'ONLINE' : 'OFFLINE'}
             </div>
           </div>
         </div>
-        <small style={{ opacity: 0.6, marginTop: '0.5rem', display: 'block' }}>
-          📱 Demand is automatically generated from your IoT device based on potentiometer readings.
-        </small>
+
+        {/* Allocation breakdown bar */}
+        {allocation && (
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', marginBottom: '0.3rem', opacity: 0.7 }}>
+              <span>Energy Source Breakdown</span>
+              <span>{allocationRate.toFixed(0)}% Pool | {gridDependency.toFixed(0)}% Grid</span>
+            </div>
+            <div style={{ height: '20px', background: 'rgba(255,255,255,0.1)', borderRadius: '5px', overflow: 'hidden', display: 'flex' }}>
+              <div style={{
+                width: `${allocationRate}%`,
+                background: 'linear-gradient(90deg, #2ecc71, #27ae60)',
+                borderRadius: allocationRate === 100 ? '5px' : '5px 0 0 5px',
+                transition: 'width 0.5s ease',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'white',
+                fontSize: '0.75rem',
+                fontWeight: 'bold',
+              }}>
+                {allocationRate > 15 && `${allocationRate.toFixed(0)}% ☀️`}
+              </div>
+              <div style={{
+                width: `${gridDependency}%`,
+                background: 'linear-gradient(90deg, #e74c3c, #c0392b)',
+                borderRadius: gridDependency === 100 ? '5px' : '0 5px 5px 0',
+                transition: 'width 0.5s ease',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'white',
+                fontSize: '0.75rem',
+                fontWeight: 'bold',
+              }}>
+                {gridDependency > 15 && `${gridDependency.toFixed(0)}% 🔌`}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Matching in progress indicator */}
-      {currentDemand > 0 && !response && (
-        <div className="card" style={{ background: 'rgba(255, 140, 0, 0.05)', borderLeft: '4px solid #ff8c00' }}>
-          <h3>⚡ Matching Energy</h3>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <div style={{ fontSize: '2rem' }}>⏳</div>
-            <div>
-              <div style={{ fontWeight: 'bold', marginBottom: '0.25rem' }}>
-                Allocating {currentDemand.toFixed(2)} kWh from pool...
+      {/* Allocation Details */}
+      {allocation && (
+        <div className="card">
+          <h3>✅ Allocation Details</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+            <div style={{ paddingRight: '1rem', borderRight: '1px solid rgba(255,255,255,0.1)' }}>
+              <div style={{ marginBottom: '1.5rem' }}>
+                <div style={{ opacity: 0.7, fontSize: '0.9rem', marginBottom: '0.5rem' }}>From Solar Pool (₹9/kWh)</div>
+                <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#27ae60', marginBottom: '0.25rem' }}>
+                  {allocatedKwh.toFixed(2)} kWh
+                </div>
+                <div style={{ fontSize: '0.9rem', color: '#27ae60' }}>
+                  ₹{(allocatedKwh * 9).toFixed(2)} cost
+                </div>
               </div>
-              <div style={{ fontSize: '0.85rem', opacity: 0.7 }}>
-                Checking available solar energy • Calculating grid fallback • Processing allocation...
+              <div>
+                <div style={{ opacity: 0.7, fontSize: '0.85rem', marginBottom: '0.5rem' }}>Status</div>
+                <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#27ae60' }}>
+                  ✓ {allocation.allocation_status === 'matched' ? '100% Renewable' : 'Hybrid'}
+                </div>
               </div>
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* Allocation result */}
-      {response && (
-        <div className="card" style={{ borderLeft: '4px solid #27ae60' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-            <h3>✅ Allocation Result</h3>
-            <button onClick={speakResult} disabled={isSpeaking} className="voice-btn active">
-              {isSpeaking ? '🔊 Speaking...' : '🔊 Speak Result'}
-            </button>
+            <div style={{ paddingLeft: '1rem' }}>
+              <div style={{ marginBottom: '1.5rem' }}>
+                <div style={{ opacity: 0.7, fontSize: '0.9rem', marginBottom: '0.5rem' }}>Grid Fallback (₹12/kWh)</div>
+                <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#ff6b6b', marginBottom: '0.25rem' }}>
+                  {gridKwh.toFixed(2)} kWh
+                </div>
+                <div style={{ fontSize: '0.9rem', color: '#ff6b6b' }}>
+                  ₹{(gridKwh * 12).toFixed(2)} cost
+                </div>
+              </div>
+              {savingsEstimate > 0 && (
+                <div>
+                  <div style={{ opacity: 0.7, fontSize: '0.85rem', marginBottom: '0.5rem' }}>Savings</div>
+                  <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#f39c12' }}>
+                    ₹{savingsEstimate.toFixed(2)}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* AI Reasoning */}
-          {response.ai_reasoning && (
-            <div style={{ background: 'rgba(100, 200, 255, 0.08)', padding: '1rem', borderRadius: '8px', marginBottom: '1.5rem', borderLeft: '3px solid #3498db' }}>
-              <div style={{ fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '0.5rem', color: '#3498db' }}>📊 AI Reasoning</div>
-              <div style={{ fontSize: '0.9rem', lineHeight: '1.5' }}>{response.ai_reasoning}</div>
-            </div>
-          )}
-
-          {/* Pool vs Grid breakdown with visual bar */}
-          <div style={{ marginBottom: '1.5rem' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
-              <div>
-                <div style={{ opacity: 0.7, fontSize: '0.9rem' }}>From Solar Pool ☀️</div>
-                <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#27ae60' }}>
-                  {response.allocated_kwh.toFixed(2)} kWh
-                </div>
-                <div style={{ fontSize: '0.85rem', color: '#27ae60', marginTop: '0.25rem' }}>
-                  {((response.allocated_kwh / response.demand_kwh) * 100).toFixed(0)}% of demand
-                </div>
-                <div style={{ fontSize: '0.85rem', color: '#27ae60' }}>
-                  ₹{(response.allocated_kwh * 9).toFixed(2)} @ ₹9/kWh
-                </div>
+          {allocation.ai_reasoning && (
+            <div style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+              <div style={{ opacity: 0.7, fontSize: '0.9rem', marginBottom: '0.75rem', fontWeight: 'bold' }}>
+                🤖 AI Matching Reasoning
               </div>
-              <div>
-                <div style={{ opacity: 0.7, fontSize: '0.9rem' }}>From Grid (Fallback) 🔌</div>
-                <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#ff6b6b' }}>
-                  {response.grid_required_kwh.toFixed(2)} kWh
-                </div>
-                <div style={{ fontSize: '0.85rem', color: '#ff6b6b', marginTop: '0.25rem' }}>
-                  {((response.grid_required_kwh / response.demand_kwh) * 100).toFixed(0)}% of demand
-                </div>
-                <div style={{ fontSize: '0.85rem', color: '#ff6b6b' }}>
-                  ₹{(response.grid_required_kwh * 12).toFixed(2)} @ ₹12/kWh
-                </div>
-              </div>
-            </div>
-
-            {/* Visual allocation bar */}
-            <div style={{ 
-              background: '#ecf0f1', 
-              borderRadius: '8px', 
-              height: '30px', 
-              overflow: 'hidden',
-              display: 'flex'
-            }}>
-              <div style={{
-                width: `${((response.allocated_kwh / response.demand_kwh) * 100).toFixed(0)}%`,
-                background: 'linear-gradient(90deg, #2ecc71, #27ae60)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'white',
-                fontWeight: 'bold',
-                fontSize: '0.85rem',
-                transition: 'width 0.3s ease'
-              }}>
-                {response.allocated_kwh > 0.1 && `${((response.allocated_kwh / response.demand_kwh) * 100).toFixed(0)}% Pool`}
-              </div>
-              <div style={{
-                width: `${((response.grid_required_kwh / response.demand_kwh) * 100).toFixed(0)}%`,
-                background: 'linear-gradient(90deg, #e74c3c, #c0392b)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'white',
-                fontWeight: 'bold',
-                fontSize: '0.85rem',
-                transition: 'width 0.3s ease'
-              }}>
-                {response.grid_required_kwh > 0.1 && `${((response.grid_required_kwh / response.demand_kwh) * 100).toFixed(0)}% Grid`}
-              </div>
-            </div>
-          </div>
-
-          {/* Status and Cost */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
-            <div style={{ background: 'rgba(52,152,219,0.05)', padding: '1rem', borderRadius: '8px', borderLeft: '3px solid #3498db' }}>
-              <div style={{ fontSize: '0.85rem', opacity: 0.7, marginBottom: '0.5rem' }}>Allocation Status</div>
-              <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: response.allocation_status === 'matched' ? '#27ae60' : '#f39c12' }}>
-                {response.allocation_status === 'matched' ? '✓ 100% Pool' : '⚡ ' + response.allocation_status.toUpperCase()}
-              </div>
-            </div>
-            <div style={{ background: 'rgba(255,140,66,0.05)', padding: '1rem', borderRadius: '8px', borderLeft: '3px solid #ff8c00' }}>
-              <div style={{ fontSize: '0.85rem', opacity: 0.7, marginBottom: '0.5rem' }}>Total Cost</div>
-              <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#ff8c00' }}>
-                ₹{response.estimated_cost_inr.toFixed(2)}
-              </div>
-              <div style={{ fontSize: '0.75rem', opacity: 0.7, marginTop: '0.25rem' }}>
-                Pool: ₹{(response.allocated_kwh * 9).toFixed(2)} + Grid: ₹{(response.grid_required_kwh * 12).toFixed(2)}
-              </div>
-            </div>
-          </div>
-
-          {/* Savings callout */}
-          {response.grid_required_kwh === 0 && (
-            <div style={{
-              marginTop: '1rem',
-              padding: '0.75rem 1rem',
-              background: 'rgba(39,174,96,0.1)',
-              borderRadius: '8px',
-              border: '1px solid rgba(39,174,96,0.3)',
-              fontSize: '0.9rem',
-              color: '#27ae60',
-              fontWeight: 'bold',
-            }}>
-              100% renewable! Saved {((response.allocated_kwh) * (12 - 9)).toFixed(2)} vs grid rate.
-            </div>
-          )}
-
-          {/* SUN Tokens minted banner */}
-          {response.sun_tokens_minted > 0 && (
-            <div style={{
-              marginTop: '1rem',
-              padding: '1rem 1.25rem',
-              background: 'rgba(255, 193, 7, 0.12)',
-              borderRadius: '8px',
-              border: '1px solid rgba(255, 193, 7, 0.4)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.75rem',
-            }}>
-              <span style={{ fontSize: '1.5rem' }}>☀️</span>
-              <div>
-                <div style={{ fontWeight: 'bold', color: '#f39c12' }}>
-                  {response.sun_tokens_minted.toFixed(2)} SUN Tokens Minted!
-                </div>
-                <div style={{ fontSize: '0.82rem', opacity: 0.8, marginTop: '0.2rem' }}>
-                  {response.blockchain_tx
-                    ? `TX: ${response.blockchain_tx.slice(0, 16)}... — Balance updating below`
-                    : 'Syncing with blockchain...'}
-                </div>
+              <div style={{ fontSize: '0.9rem', lineHeight: '1.6', opacity: 0.9 }}>
+                {allocation.ai_reasoning}
               </div>
             </div>
           )}
         </div>
       )}
 
-      <WalletDisplay houseId={houseId} refreshTrigger={walletRefreshKey} />
+      {/* Today's Summary */}
+      {dashboard.demand_summary && (
+        <div className="card">
+          <h3>📊 Today's Summary</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem' }}>
+            <div>
+              <div style={{ opacity: 0.7, fontSize: '0.9rem' }}>Total Demand</div>
+              <div style={{ fontSize: '1.4rem', fontWeight: 'bold', color: '#3498db' }}>
+                {todayDemandKwh.toFixed(2)} kWh
+              </div>
+            </div>
+            <div>
+              <div style={{ opacity: 0.7, fontSize: '0.9rem' }}>Avg Hourly</div>
+              <div style={{ fontSize: '1.4rem', fontWeight: 'bold', color: '#9b59b6' }}>
+                {(dashboard.demand_summary.average_hourly_kw || 0).toFixed(2)} kW
+              </div>
+            </div>
+            <div>
+              <div style={{ opacity: 0.7, fontSize: '0.9rem' }}>Total Cost</div>
+              <div style={{ fontSize: '1.4rem', fontWeight: 'bold', color: '#e67e22' }}>
+                ₹{(todayDemandKwh * 9.5).toFixed(2)}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
-      {/* ── Demo Simulator for buyer houses ── */}
+      <WalletDisplay houseId={houseId} />
+
+      {/* AI Analysis Toggle */}
+      <div className="card">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+          <h3>🤖 Buyer Analysis</h3>
+          <button onClick={() => setShowAIReasoning(!showAIReasoning)} style={{ padding: '0.5rem 1rem', fontSize: '0.9rem' }}>
+            {showAIReasoning ? 'Hide' : 'Show Details'}
+          </button>
+        </div>
+        {showAIReasoning && (
+          <AIReasoningConsole
+            reasoning={`Buyer Energy Analysis:
+- Current Demand: ${currentDemand.toFixed(2)} kW
+- From Pool: ${allocatedKwh.toFixed(2)} kWh @ ₹9/kWh
+- From Grid: ${gridKwh.toFixed(2)} kWh @ ₹12/kWh
+- Pool Allocation Rate: ${allocationRate.toFixed(0)}%
+- Grid Dependency: ${gridDependency.toFixed(0)}%
+- Estimated Savings: ₹${savingsEstimate.toFixed(2)}
+- Total Daily Demand: ${todayDemandKwh.toFixed(2)} kWh
+
+The AI matching engine prioritizes renewable energy allocation from
+the pool while maintaining 99.9% supply reliability through grid fallback.
+Higher pool allocation = more savings + less carbon footprint.`}
+            isVisible={true}
+          />
+        )}
+      </div>
 
       <div className="alert info" style={{ marginTop: '1.5rem' }}>
-        <strong>💡 Pool Benefits:</strong> Save up to 25% vs grid rates by using renewable energy from your feeder.
-        Higher priority = faster allocation. Grid fallback ensures 99.9% reliability.
+        <strong>ℹ️ How it works:</strong> Your IoT device sends demand automatically.
+        AI allocates from the solar pool first (₹9/kWh), then grid (₹12/kWh) if needed.
+        The more renewable energy available = more savings for you!
       </div>
     </div>
   )
