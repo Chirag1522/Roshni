@@ -13,8 +13,7 @@ from config import settings
 from logging_config import setup_logging
 from app import models
 from app.database import init_db, get_db
-from app.routes import demand, dashboard, billing, admin, blockchain, wallet, voice
-# NOTE: IoT router is replaced by a simple inline endpoint below
+from app.routes import demand, dashboard, billing, admin, blockchain, wallet, voice, iot
 
 
 # Setup logging
@@ -74,7 +73,6 @@ async def global_exception_handler(request: Request, exc: Exception):
     )
 
 # API Routers
-# IoT endpoint is defined directly below, so we no longer include the separate router
 app.include_router(demand.router, prefix="/api/demand", tags=["Demand"])
 app.include_router(dashboard.router, prefix="/api/dashboard", tags=["Dashboard"])
 app.include_router(wallet.router, prefix="/api/wallet", tags=["Wallet"])
@@ -82,6 +80,7 @@ app.include_router(billing.router, prefix="/api/billing", tags=["Billing"])
 app.include_router(admin.router, prefix="/api/admin", tags=["Admin"])
 app.include_router(blockchain.router, prefix="/api/blockchain", tags=["Blockchain"])
 app.include_router(voice.router, prefix="/api/voice", tags=["Voice"])
+app.include_router(iot.router, prefix="/api/iot", tags=["IoT"])
 
 # Health check
 @app.get("/health", tags=["System"])

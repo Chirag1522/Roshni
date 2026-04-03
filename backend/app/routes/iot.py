@@ -9,7 +9,7 @@ from datetime import datetime
 import logging
 
 from app.database import get_db
-from app.models import House, GenerationRecord, DemandRecord
+from app.models import House, GenerationRecord, DemandRecord, Allocation
 from app.services.iot_service import iot_service
 from app.services.matching_engine import MatchingEngine
 
@@ -182,6 +182,17 @@ async def get_demand_status(house_id: str, db: Session = Depends(get_db)):
     )
 
     if latest_demand:
+        # Get related allocation data
+        allocation = (
+            db.query(Allocation)
+            .filter(Allocation.house_id == house.id)
+            .order_by(Allocation.created_at.desc())
+            .first()
+        )
+        
+        allocated_kwh = allocation.allocated_kwh if allocation else 0
+        grid_required = latest_demand.demand_kwh - allocated_kwh
+        
         return {
             "house_id": house_id,
             "current_demand_kwh": iot_status.get("demand_kwh", 0),
@@ -191,9 +202,13 @@ async def get_demand_status(house_id: str, db: Session = Depends(get_db)):
                 "demand_id": latest_demand.id,
                 "demand_kwh": latest_demand.demand_kwh,
                 "allocation_status": "matched" if latest_demand.status == "fulfilled" else "partial",
-                "allocated_kwh": latest_demand.allocated_kwh or 0,
-                "grid_required_kwh": (latest_demand.demand_kwh - (latest_demand.allocated_kwh or 0)),
+                "allocated_kwh": allocated_kwh,
+                "grid_required_kwh": max(0, grid_required),
                 "status": latest_demand.status,
+                "ai_reasoning": allocation.ai_reasoning if allocation else "No allocation yet",
+                "estimated_cost_inr": (allocated_kwh * 9) + (max(0, grid_required) * 12),
+                "sun_tokens_minted": 0,
+                "blockchain_tx": allocation.transaction_hash if allocation else None,
                 "created_at": latest_demand.created_at.isoformat(),
             },
         }
