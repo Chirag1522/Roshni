@@ -101,7 +101,7 @@ async def submit_iot_demand(data: IoTDemandData, db: Session = Depends(get_db)):
     demand = DemandRecord(
         house_id=house.id,
         demand_kwh=data.demand_kwh,
-        priority_level="normal",
+        priority_level=5,  # Normal priority (1-10 scale)
         duration_hours=1.0,
         status="pending",
     )
@@ -177,7 +177,7 @@ async def test_iot_demand(house_id: str, demand_kwh: float, db: Session = Depend
     demand = DemandRecord(
         house_id=house.id,
         demand_kwh=demand_kwh,
-        priority_level="normal",
+        priority_level=5,  # Normal priority
         duration_hours=1.0,
         status="pending",
     )
