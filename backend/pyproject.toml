@@ -1,0 +1,15 @@
+[project]
+name = "roshni"
+version = "1.0.0"
+description = "AI-powered DISCOM-compliant solar energy pool with blockchain allocation proof"
+authors = [{name = "ROSHNI Team"}]
+requires-python = ">=3.10"
+dependencies = [
+    # Listed in requirements.txt
+]
+
+[tool.black]
+line-length = 100
+
+[tool.isort]
+profile = "black"

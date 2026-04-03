@@ -1,0 +1,269 @@
+{
+  "info": {
+    "name": "ROSHNI - Solar Energy Pool API",
+    "description": "AI-powered DISCOM-compliant feeder-level solar energy pool with blockchain allocation proof",
+    "version": "1.0.0"
+  },
+  "item": [
+    {
+      "name": "System",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "url": "{{backend_url}}/health"
+          },
+          "response": []
+        },
+        {
+          "name": "Root Info",
+          "request": {
+            "method": "GET",
+            "url": "{{backend_url}}/"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "IoT",
+      "item": [
+        {
+          "name": "Update Generation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"house_id\": \"HOUSE_FDR12_001\",\n  \"generation_kwh\": 2.5,\n  \"device_id\": \"NodeMCU_001\",\n  \"signal_strength\": -65.0,\n  \"auth_token\": \"iot_secret_token_12345\"\n}"
+            },
+            "url": "{{backend_url}}/api/iot/update"
+          },
+          "response": []
+        },
+        {
+          "name": "Get IoT Status",
+          "request": {
+            "method": "GET",
+            "url": "{{backend_url}}/api/iot/status/HOUSE_FDR12_001"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Demand",
+      "item": [
+        {
+          "name": "Submit Demand",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"house_id\": \"HOUSE_FDR12_002\",\n  \"demand_kwh\": 5.0,\n  \"priority_level\": 7,\n  \"duration_hours\": 2.0\n}"
+            },
+            "url": "{{backend_url}}/api/demand/submit"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Demand Status",
+          "request": {
+            "method": "GET",
+            "url": "{{backend_url}}/api/demand/status/1"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Dashboard",
+      "item": [
+        {
+          "name": "Get House Dashboard",
+          "request": {
+            "method": "GET",
+            "url": "{{backend_url}}/api/dashboard/HOUSE_FDR12_001"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Pool State",
+          "request": {
+            "method": "GET",
+            "url": "{{backend_url}}/api/dashboard/pool/FDR_12"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Billing",
+      "item": [
+        {
+          "name": "Generate Bill",
+          "request": {
+            "method": "POST",
+            "url": "{{backend_url}}/api/billing/generate/HOUSE_FDR12_001/2024-03"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Bill Details",
+          "request": {
+            "method": "GET",
+            "url": "{{backend_url}}/api/billing/HOUSE_FDR12_001/2024-03"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Bill List",
+          "request": {
+            "method": "GET",
+            "url": "{{backend_url}}/api/billing/HOUSE_FDR12_001/monthly-list"
+          },
+          "response": []
+        },
+        {
+          "name": "Finalize Bill",
+          "request": {
+            "method": "POST",
+            "url": "{{backend_url}}/api/billing/1/finalize"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Blockchain",
+      "item": [
+        {
+          "name": "Get Network Params",
+          "request": {
+            "method": "GET",
+            "url": "{{backend_url}}/api/blockchain/network-params"
+          },
+          "response": []
+        },
+        {
+          "name": "Create SUN ASA",
+          "request": {
+            "method": "POST",
+            "url": "{{backend_url}}/api/blockchain/sun-asa/create"
+          },
+          "response": []
+        },
+        {
+          "name": "Transfer SUN ASA",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"house_id\": \"HOUSE_FDR12_001\",\n  \"amount\": 50.0,\n  \"reason\": \"allocation\"\n}"
+            },
+            "url": "{{backend_url}}/api/blockchain/sun-asa/transfer"
+          },
+          "response": []
+        },
+        {
+          "name": "Submit Bill Hash",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"house_id\": \"HOUSE_FDR12_001\",\n  \"month_year\": \"2024-03\",\n  \"bill_hash\": \"a3f7e2d9b1c5f7e9d3a5c7b9e1f3a5c7b9e1f3a5c7b9e1f3a5c7b9e1f3a5c7\"\n}"
+            },
+            "url": "{{backend_url}}/api/blockchain/bill-hash/submit"
+          },
+          "response": []
+        },
+        {
+          "name": "Verify Bill Hash",
+          "request": {
+            "method": "GET",
+            "url": "{{backend_url}}/api/blockchain/bill-hash/verify/TXID123456"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "item": [
+        {
+          "name": "Toggle Night Mode",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"enabled\": true,\n  \"feeder_code\": \"FDR_12\",\n  \"reason\": \"Cloud cover simulation\"\n}"
+            },
+            "url": "{{backend_url}}/api/admin/night-mode"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Night Mode Status",
+          "request": {
+            "method": "GET",
+            "url": "{{backend_url}}/api/admin/night-mode-status"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Feeder Details",
+          "request": {
+            "method": "GET",
+            "url": "{{backend_url}}/api/admin/feeders/FDR_12"
+          },
+          "response": []
+        },
+        {
+          "name": "List Houses in Feeder",
+          "request": {
+            "method": "GET",
+            "url": "{{backend_url}}/api/admin/houses/FDR_12"
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "backend_url",
+      "value": "http://localhost:8000",
+      "type": "string"
+    }
+  ]
+}

@@ -1,0 +1,58 @@
+"""
+DISCOM (Distribution Company) integration service.
+Handles fee calculations and DISCOM-specific logic.
+Real system would integrate with DISCOM APIs.
+"""
+import logging
+from config import settings
+
+logger = logging.getLogger(__name__)
+
+class DISCOMService:
+    """Manages DISCOM fees and compliances."""
+    
+    def __init__(self):
+        """Initialize DISCOM service."""
+        self.fixed_charge = settings.discom_fixed_charge
+        self.admin_fee_percent = settings.discom_admin_fee_percent
+        self.grid_rate = settings.discom_grid_rate
+        self.export_rate = settings.discom_export_rate
+    
+    def calculate_admin_fee(self, transaction_amount_inr: float) -> float:
+        """
+        Calculate DISCOM administrative fee.
+        Typically 2-5% of transactions for renewable integration.
+        """
+        return transaction_amount_inr * (self.admin_fee_percent / 100.0)
+    
+    def get_grid_rate(self) -> float:
+        """Get current grid purchase rate (INR/kWh)."""
+        return self.grid_rate
+    
+    def get_export_rate(self) -> float:
+        """Get solar export rate (INR/kWh)."""
+        return self.export_rate
+    
+    def validate_house(self, house_code: str) -> bool:
+        """
+        Validate house is registered with DISCOM.
+        In real system, query DISCOM database.
+        """
+        # Simplified validation
+        if not house_code.startswith("HOUSE_"):
+            logger.warning(f"Invalid house code format: {house_code}")
+            return False
+        return True
+    
+    def submit_settlement_data(self, bill_data: dict) -> dict:
+        """
+        Submit bill data to DISCOM for final settlement.
+        In real system, this would be an API call to DISCOM backend.
+        """
+        logger.info(f"Submitting settlement for {bill_data.get('house_id')}")
+        
+        return {
+            "status": "acknowledged",
+            "settlement_id": f"DISC_{bill_data.get('month_year')}_{bill_data.get('house_id')}",
+            "message": "Bill submitted for DISCOM settlement",
+        }
