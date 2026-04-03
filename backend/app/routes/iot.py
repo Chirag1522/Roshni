@@ -163,10 +163,25 @@ async def unified_iot_update(data: IoTData, db: Session = Depends(get_db)):
         }
 
     else:
-        logger.warning(f"[IoT/Update] Invalid request: No generation or demand data provided")
+        # ========== BOTH ZERO OR VERY LOW - ACCEPT BUT DON'T PROCESS ==========
+        logger.info(f"[IoT/Update] No significant data: Gen={data.generation_kwh}, Demand={data.demand_kwh} (skipping processing)")
+        
+        # Still track the device heartbeat in cache
+        if data.device_id.startswith("NodeMCU"):
+            if "Demand" in str(data.house_id) or data.house_id == "HOUSE_FDR12_002":
+                # Buyer device
+                iot_service.update_buyer_demand(data.house_id, 0, data.device_id)
+            else:
+                # Seller device
+                iot_service.update_device_status(data.house_id, data.device_id, 0, data.signal_strength)
+        
         return {
-            "status": "error",
-            "message": "Either generation_kwh or demand_kwh must be > 0",
+            "status": "heartbeat_received",
+            "device_id": data.device_id,
+            "house_id": data.house_id,
+            "message": "Device connected, waiting for data",
+            "generation_kwh": data.generation_kwh,
+            "demand_kwh": data.demand_kwh,
         }
 
 
