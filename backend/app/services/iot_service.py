@@ -12,6 +12,7 @@ class IoTService:
 
     def __init__(self):
         self.device_status: Dict[str, Dict[str, Any]] = {}
+        self.buyer_demand: Dict[str, Dict[str, Any]] = {}  # Track buyer demand from IoT
         self.cumulative_generation: Dict[str, float] = {}  # Track total kWh per house
         self.last_generation_time: Dict[str, datetime] = {}  # Track last update time
 
@@ -57,6 +58,24 @@ class IoTService:
         }
 
         logger.info(f"Updated IoT status for {house_id}: {generation_kwh} kW (cumulative: {self.cumulative_generation[house_id]:.3f} kWh)")
+
+    def update_buyer_demand(self, house_id: str, demand_kwh: float, device_id: str):
+        """Update buyer demand from IoT device (potentiometer-based)."""
+        current_time = datetime.utcnow()
+        current_time_str = current_time.isoformat() + "Z"
+        
+        self.buyer_demand[house_id] = {
+            "device_id": device_id,
+            "demand_kwh": demand_kwh,
+            "last_update": current_time_str,
+            "status": "active" if demand_kwh > 0.1 else "idle",
+        }
+        
+        logger.info(f"Updated buyer demand for {house_id}: {demand_kwh} kWh from {device_id}")
+
+    def get_buyer_demand(self, house_id: str) -> Dict[str, Any]:
+        """Get current buyer demand for a house."""
+        return self.buyer_demand.get(house_id)
 
     def get_device_status(self, house_id: str) -> Dict[str, Any]:
         """Get IoT device status for a house."""

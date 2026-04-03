@@ -1,59 +1,53 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import api from '../services/api'
 import voiceService from '../services/voice'
 import AIReasoningConsole from '../components/AIReasoningConsole'
 import WalletDisplay from '../components/WalletDisplay'
 
 export default function BuyerDashboard({ houseId }) {
-  const [demand, setDemand] = useState('')
-  const [duration, setDuration] = useState('1')
-  const [loading, setLoading] = useState(false)
+  const [currentDemand, setCurrentDemand] = useState(0)
   const [response, setResponse] = useState(null)
-  const [estimatedCost, setEstimatedCost] = useState(0)
   const [voiceEnabled] = useState(localStorage.getItem('voiceEnabled') !== 'false')
   const [isSpeaking, setIsSpeaking] = useState(false)
   const [walletRefreshKey, setWalletRefreshKey] = useState(0)
+  const [iotStatus, setIotStatus] = useState('Waiting for IoT data...')
 
-  const handleDemandChange = (e) => {
-    const val = parseFloat(e.target.value) || 0
-    setDemand(val)
-    setEstimatedCost(val * 9)
-  }
-
-  const submitDemand = async () => {
-    if (!demand || demand <= 0) {
-      alert('Please enter valid demand')
-      return
-    }
-    setLoading(true)
-    try {
-      const res = await api.post('/demand/submit', {
-        house_id: houseId,
-        demand_kwh: parseFloat(demand),
-        duration_hours: parseFloat(duration),
-      })
-      setResponse(res.data)
-
-      // If SUN tokens were minted, refresh wallet balance after a short delay
-      // (give blockchain time to confirm the transaction)
-      if (res.data.sun_tokens_minted > 0) {
-        setTimeout(() => setWalletRefreshKey(k => k + 1), 3000)
-        setTimeout(() => setWalletRefreshKey(k => k + 1), 8000)
+  // Fetch latest demand and allocation status every 5 seconds
+  useEffect(() => {
+    const pollDemand = async () => {
+      try {
+        const res = await api.get(`/iot/demand-status/${houseId}`)
+        if (res.data) {
+          setCurrentDemand(res.data.current_demand_kwh || 0)
+          setIotStatus('IoT device connected')
+          
+          // If allocation is available, update response
+          if (res.data.allocation) {
+            setResponse(res.data.allocation)
+            
+            // Refresh wallet if tokens were minted
+            if (res.data.allocation.sun_tokens_minted > 0) {
+              setWalletRefreshKey(k => k + 1)
+            }
+            
+            // Narrate if voice enabled and newly matched
+            if (voiceEnabled && res.data.allocation.allocation_status === 'matched' && !isSpeaking) {
+              setIsSpeaking(true)
+              await voiceService.narrateAllocation(res.data.allocation)
+              setIsSpeaking(false)
+            }
+          }
+        }
+      } catch (error) {
+        setIotStatus('Waiting for IoT data...')
+        setCurrentDemand(0)
       }
-
-      if (voiceEnabled && res.data.allocation_status === 'matched') {
-        setIsSpeaking(true)
-        await voiceService.narrateAllocation(res.data)
-        setIsSpeaking(false)
-      }
-
-      setDemand('')
-    } catch (error) {
-      alert(`Error: ${error.message}`)
-    } finally {
-      setLoading(false)
     }
-  }
+
+    const interval = setInterval(pollDemand, 5000)
+    pollDemand() // Initial call
+    return () => clearInterval(interval)
+  }, [houseId, voiceEnabled, isSpeaking])
 
   const speakResult = async () => {
     if (response && voiceEnabled) {
@@ -67,50 +61,29 @@ export default function BuyerDashboard({ houseId }) {
     <div>
       <h1>🔌 Buyer Dashboard</h1>
       <p style={{ color: '#888', marginBottom: '2rem' }}>
-        House: {houseId} | Request solar supply from feeder pool
+        House: {houseId} | Automatic demand from IoT device
       </p>
 
-      {/* Demand form */}
-      <div className="card">
-        <h3>📋 Request Energy Allocation</h3>
-
-        <div className="form-group">
-          <label>Demand (kWh)</label>
-          <input
-            type="number"
-            value={demand}
-            onChange={handleDemandChange}
-            placeholder="e.g., 5.0"
-            min="0"
-            step="0.1"
-          />
-          <small style={{ opacity: 0.7 }}>Amount of energy you need</small>
+      {/* IoT Status */}
+      <div className="card" style={{ background: 'rgba(52,152,219,0.05)', borderLeft: '4px solid #3498db' }}>
+        <h3>🔌 Live IoT Status</h3>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+          <div>
+            <div style={{ opacity: 0.7, fontSize: '0.9rem' }}>Current Demand (from Potentiometer)</div>
+            <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#3498db' }}>
+              {currentDemand.toFixed(2)} kWh
+            </div>
+          </div>
+          <div>
+            <div style={{ opacity: 0.7, fontSize: '0.9rem' }}>Device Status</div>
+            <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: currentDemand > 0 ? '#27ae60' : '#95a5a6' }}>
+              {iotStatus}
+            </div>
+          </div>
         </div>
-
-        <div className="form-group">
-          <label>Duration (hours)</label>
-          <input
-            type="number"
-            value={duration}
-            onChange={(e) => setDuration(e.target.value)}
-            min="0.5"
-            step="0.5"
-          />
-        </div>
-
-        <div className="metric-box info" style={{ marginBottom: '1rem' }}>
-          <div className="metric-label">Estimated Cost</div>
-          <div className="metric-value">₹{estimatedCost.toFixed(2)}</div>
-          <div style={{ fontSize: '0.85rem' }}>@ ₹9/kWh pool rate</div>
-        </div>
-
-        <button
-          onClick={submitDemand}
-          disabled={loading}
-          style={{ width: '100%', padding: '1rem', fontSize: '1.1rem', fontWeight: 'bold' }}
-        >
-          {loading ? 'Processing...' : '🎯 Submit Demand'}
-        </button>
+        <small style={{ opacity: 0.6, marginTop: '0.5rem', display: 'block' }}>
+          📱 Demand is automatically generated from your IoT device based on potentiometer readings.
+        </small>
       </div>
 
       {/* Allocation result */}
