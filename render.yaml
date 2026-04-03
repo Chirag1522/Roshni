@@ -71,3 +71,14 @@ services:
       # ============ IoT ============
       - key: IOT_AUTH_TOKEN
         sync: false
+
+  - type: web
+    name: roshni-frontend
+    root_dir: ./frontend
+    env: node
+    nodeVersion: 18
+    buildCommand: npm ci && npm run build
+    startCommand: npx serve -s dist -l 3000
+    envVars:
+      - key: VITE_BACKEND_URL
+        value: https://roshni-backend-o7al.onrender.com
