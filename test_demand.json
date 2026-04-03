@@ -1,0 +1,7 @@
+{
+  "auth_token": "iot_secret_token_12345",
+  "device_id": "ESP32_BUYER_002",
+  "house_id": "HOUSE_FDR12_002",
+  "demand_kwh": 2.5,
+  "signal_strength": 85
+}

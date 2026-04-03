@@ -156,7 +156,7 @@ async def get_demand_status(house_id: str, db: Session = Depends(get_db)):
     Get current IoT demand status and latest allocation for buyer dashboard.
     Returns real-time data for auto-updating frontend.
     """
-    # Get device status
+    # Get device status from in-memory service
     iot_status = iot_service.get_buyer_demand(house_id)
     
     # Helper function to check device online status (within 30 seconds)
@@ -174,7 +174,9 @@ async def get_demand_status(house_id: str, db: Session = Depends(get_db)):
             logger.warning(f"Error parsing timestamp for {house_id}: {e}")
             return False
     
-    if not iot_status:
+    # Get latest demand record to check for allocation
+    house = db.query(House).filter(House.house_id == house_id).first()
+    if not house:
         return {
             "house_id": house_id,
             "current_demand_kwh": 0,
@@ -182,17 +184,7 @@ async def get_demand_status(house_id: str, db: Session = Depends(get_db)):
             "allocation": None,
         }
 
-    # Get latest demand record to check for allocation
-    house = db.query(House).filter(House.house_id == house_id).first()
-    if not house:
-        return {
-            "house_id": house_id,
-            "current_demand_kwh": iot_status.get("demand_kwh", 0),
-            "device_online": is_device_online(iot_status.get("last_update")),
-            "allocation": None,
-        }
-
-    # Get the most recent demand record
+    # Get the most recent demand record from database
     latest_demand = (
         db.query(DemandRecord)
         .filter(DemandRecord.house_id == house.id)
@@ -200,8 +192,34 @@ async def get_demand_status(house_id: str, db: Session = Depends(get_db)):
         .first()
     )
 
+    # Determine device online status from either in-memory cache OR recent database activity
+    device_online = False
+    if iot_status:
+        # Prefer in-memory status if available (real-time data)
+        device_online = is_device_online(iot_status.get("last_update"))
+    elif latest_demand:
+        # Fall back to database - check if latest demand is recent (within 30 seconds)
+        time_diff = datetime.utcnow() - latest_demand.created_at
+        device_online = time_diff.total_seconds() < 30
+
+    # Current demand - prefer in-memory if available, else use latest database record
+    current_demand_kwh = 0
+    if iot_status:
+        current_demand_kwh = iot_status.get("demand_kwh", 0)
+    elif latest_demand:
+        current_demand_kwh = latest_demand.demand_kwh
+
+    # If no demand data at all, return early
+    if not iot_status and not latest_demand:
+        return {
+            "house_id": house_id,
+            "current_demand_kwh": 0,
+            "device_online": False,
+            "allocation": None,
+        }
+
+    # Get related allocation data
     if latest_demand:
-        # Get related allocation data
         allocation = (
             db.query(Allocation)
             .filter(Allocation.house_id == house.id)
@@ -214,9 +232,9 @@ async def get_demand_status(house_id: str, db: Session = Depends(get_db)):
         
         return {
             "house_id": house_id,
-            "current_demand_kwh": iot_status.get("demand_kwh", 0),
-            "device_online": is_device_online(iot_status.get("last_update")),
-            "last_update": iot_status.get("last_update"),
+            "current_demand_kwh": current_demand_kwh,
+            "device_online": device_online,
+            "last_update": iot_status.get("last_update") if iot_status else latest_demand.created_at.isoformat(),
             "allocation": {
                 "demand_id": latest_demand.id,
                 "demand_kwh": latest_demand.demand_kwh,
@@ -234,7 +252,7 @@ async def get_demand_status(house_id: str, db: Session = Depends(get_db)):
 
     return {
         "house_id": house_id,
-        "current_demand_kwh": iot_status.get("demand_kwh", 0),
-        "device_online": is_device_online(iot_status.get("last_update")),
+        "current_demand_kwh": current_demand_kwh,
+        "device_online": device_online,
         "allocation": None,
     }
