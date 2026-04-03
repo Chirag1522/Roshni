@@ -268,9 +268,12 @@ async def get_demand_status(house_id: str, db: Session = Depends(get_db)):
     device_online = False
     if iot_status:
         # Prefer in-memory status if available (real-time data)
-        device_online = is_device_online(iot_status.get("last_update"))
+        last_update = iot_status.get("last_update")
+        device_online = is_device_online(last_update)
+        logger.info(f"[GET] Using in-memory status: last_update={last_update}, online={device_online}")
     elif latest_demand:
         # Fall back to database - check if latest demand is recent (within 30 seconds)
+        logger.info(f"[GET] In-memory empty, checking database: created_at={latest_demand.created_at}")
         try:
             # Handle both timezone-aware and naive datetimes
             demand_time = latest_demand.created_at
@@ -310,7 +313,7 @@ async def get_demand_status(house_id: str, db: Session = Depends(get_db)):
     # ⚠️ If device is OFFLINE (no fresh data), don't show stale allocation
     # This prevents confusion from old cached values
     if not device_online and not iot_status:
-        logger.info(f"[GET] Device offline for {house_id} - returning empty demand instead of stale data")
+        logger.info(f"[GET] Device offline (>30s) and no in-memory cache - returning empty")
         return {
             "house_id": house_id,
             "current_demand_kwh": 0,
@@ -332,6 +335,8 @@ async def get_demand_status(house_id: str, db: Session = Depends(get_db)):
         # Use current_demand_kwh (freshest available) for grid calculation
         grid_required = max(0, current_demand_kwh - allocated_kwh)
         
+        logger.info(f"[GET] ✓ Returning with allocation: demand={current_demand_kwh}kWh, pool={allocated_kwh}kWh, grid={grid_required}kWh, online={device_online}")
+        
         return {
             "house_id": house_id,
             "current_demand_kwh": current_demand_kwh,
@@ -352,6 +357,8 @@ async def get_demand_status(house_id: str, db: Session = Depends(get_db)):
             },
         }
 
+    logger.info(f"[GET] Fallback return: demand={current_demand_kwh}kWh, online={device_online}, no allocation")
+    
     return {
         "house_id": house_id,
         "current_demand_kwh": current_demand_kwh,

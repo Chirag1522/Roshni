@@ -71,11 +71,16 @@ class IoTService:
             "status": "active" if demand_kwh > 0.1 else "idle",
         }
         
-        logger.info(f"Updated buyer demand for {house_id}: {demand_kwh} kWh from {device_id}")
+        logger.info(f"[IoTService] ✓ Stored buyer_demand: house={house_id}, demand={demand_kwh}kWh, update_time={current_time_str}")
+        logger.debug(f"[IoTService] Full buyer_demand dict: {self.buyer_demand}")
 
     def get_buyer_demand(self, house_id: str) -> Dict[str, Any]:
         """Get current buyer demand for a house."""
-        return self.buyer_demand.get(house_id)
+        result = self.buyer_demand.get(house_id)
+        logger.debug(f"[IoTService] get_buyer_demand({house_id}): found={result is not None}")
+        if result:
+            logger.debug(f"[IoTService]   Data: {result}")
+        return result
 
     def get_device_status(self, house_id: str) -> Dict[str, Any]:
         """Get IoT device status for a house."""
