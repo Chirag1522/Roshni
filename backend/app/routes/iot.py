@@ -88,11 +88,14 @@ async def submit_iot_demand(data: IoTDemandData, db: Session = Depends(get_db)):
 
     # Skip if demand is too low (noise filtering)
     if data.demand_kwh < 0.1:
+        logger.info(f"[IoT] Demand below threshold for {data.house_id}: {data.demand_kwh} kWh")
         return {
             "status": "skipped",
             "reason": "Demand below threshold",
             "demand_kwh": data.demand_kwh,
         }
+
+    logger.info(f"[IoT] ✓ POST /demand received: {data.house_id} → {data.demand_kwh} kWh from {data.device_id}")
 
     # Record demand as pending
     demand = DemandRecord(
@@ -108,13 +111,14 @@ async def submit_iot_demand(data: IoTDemandData, db: Session = Depends(get_db)):
 
     # Store in IoT service for real-time tracking
     iot_service.update_buyer_demand(data.house_id, data.demand_kwh, data.device_id)
+    logger.info(f"[IoT] ✓ Cached in-memory service for {data.house_id}")
 
     # Run matching engine
     try:
         matching = MatchingEngine(db)
         result = matching.match_demand(house.id, data.demand_kwh)
     except Exception as e:
-        logger.error(f"Matching failed for {data.house_id}: {e}")
+        logger.error(f"[IoT] Matching failed for {data.house_id}: {e}")
         # Fallback: allocate all from grid
         result = {
             "pool_kwh": 0,
@@ -135,8 +139,7 @@ async def submit_iot_demand(data: IoTDemandData, db: Session = Depends(get_db)):
     # No need to create a duplicate here - matching engine handles it
 
     logger.info(
-        f"IoT Demand matched: {data.house_id} → "
-        f"Pool={result['pool_kwh']:.2f}kWh, Grid={result['grid_kwh']:.2f}kWh"
+        f"[IoT] ✓ Demand matched: {data.house_id} → Pool={result['pool_kwh']:.2f}kWh, Grid={result['grid_kwh']:.2f}kWh"
     )
 
     return {
@@ -156,6 +159,67 @@ async def submit_iot_demand(data: IoTDemandData, db: Session = Depends(get_db)):
     }
 
 
+@router.post("/test-demand")
+async def test_iot_demand(house_id: str, demand_kwh: float, db: Session = Depends(get_db)):
+    """
+    TEST ENDPOINT: Manually send demand to simulate IoT device.
+    Use this to test if system works without ESP32.
+    Example: POST /api/iot/test-demand?house_id=HOUSE_FDR12_002&demand_kwh=2.5
+    """
+    logger.info(f"[TEST] Manual demand submission: {house_id} → {demand_kwh} kWh")
+    
+    # Use the same logic as POST /demand
+    house = db.query(House).filter(House.house_id == house_id).first()
+    if not house:
+        raise HTTPException(status_code=404, detail="House not found")
+
+    # Record demand as pending
+    demand = DemandRecord(
+        house_id=house.id,
+        demand_kwh=demand_kwh,
+        priority_level="normal",
+        duration_hours=1.0,
+        status="pending",
+    )
+    db.add(demand)
+    db.commit()
+    db.refresh(demand)
+
+    # Store in IoT service for real-time tracking
+    iot_service.update_buyer_demand(house_id, demand_kwh, "TEST_DEVICE")
+    logger.info(f"[TEST] ✓ In-memory cache updated: {house_id} → {demand_kwh} kWh")
+
+    # Run matching engine
+    try:
+        matching = MatchingEngine(db)
+        result = matching.match_demand(house.id, demand_kwh)
+    except Exception as e:
+        logger.error(f"[TEST] Matching failed: {e}")
+        result = {
+            "pool_kwh": 0,
+            "grid_kwh": demand_kwh,
+            "ai_reasoning": "Test fallback",
+            "estimated_pool_cost_inr": 0,
+            "estimated_grid_cost_inr": demand_kwh * 12,
+            "sun_tokens_minted": 0,
+            "blockchain_tx": None,
+            "allocation_id": None,
+        }
+
+    demand.status = "fulfilled" if result["grid_kwh"] == 0 else "partial"
+    db.commit()
+
+    return {
+        "status": "test_matched",
+        "demand_id": demand.id,
+        "demand_kwh": demand_kwh,
+        "allocated_kwh": result["pool_kwh"],
+        "grid_required_kwh": result["grid_kwh"],
+        "allocation_status": "matched" if result["grid_kwh"] == 0 else "partial",
+        "message": "Test demand submitted successfully. Check GET /iot/demand-status to verify.",
+    }
+
+
 @router.get("/demand-status/{house_id}")
 async def get_demand_status(house_id: str, db: Session = Depends(get_db)):
     """
@@ -164,6 +228,8 @@ async def get_demand_status(house_id: str, db: Session = Depends(get_db)):
     """
     # Get device status from in-memory service
     iot_status = iot_service.get_buyer_demand(house_id)
+    
+    logger.info(f"[GET] demand-status/{house_id}: in-memory={iot_status is not None}")
     
     # Helper function to check device online status (within 30 seconds)
     def is_device_online(last_update_str):
