@@ -1,0 +1,241 @@
+[2026-04-03 19:13:35,067] app.database:28 - INFO - Initializing database...
+[2026-04-03 19:13:35,083] sqlalchemy.engine.Engine:1091 - INFO - BEGIN (implicit)
+[2026-04-03 19:13:35,084] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA main.table_info("feeders")
+[2026-04-03 19:13:35,085] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-03 19:13:35,088] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA temp.table_info("feeders")
+[2026-04-03 19:13:35,088] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-03 19:13:35,089] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA main.table_info("houses")
+[2026-04-03 19:13:35,089] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-03 19:13:35,090] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA temp.table_info("houses")
+[2026-04-03 19:13:35,090] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-03 19:13:35,090] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA main.table_info("generation_records")
+[2026-04-03 19:13:35,090] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-03 19:13:35,091] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA temp.table_info("generation_records")
+[2026-04-03 19:13:35,091] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-03 19:13:35,091] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA main.table_info("demand_records")
+[2026-04-03 19:13:35,091] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-03 19:13:35,092] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA temp.table_info("demand_records")
+[2026-04-03 19:13:35,092] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-03 19:13:35,092] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA main.table_info("allocations")
+[2026-04-03 19:13:35,093] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-03 19:13:35,093] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA temp.table_info("allocations")
+[2026-04-03 19:13:35,093] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-03 19:13:35,094] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA main.table_info("pool_states")
+[2026-04-03 19:13:35,094] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-03 19:13:35,094] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA temp.table_info("pool_states")
+[2026-04-03 19:13:35,094] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-03 19:13:35,095] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA main.table_info("daily_logs")
+[2026-04-03 19:13:35,095] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-03 19:13:35,095] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA temp.table_info("daily_logs")
+[2026-04-03 19:13:35,095] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-03 19:13:35,095] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA main.table_info("monthly_bills")
+[2026-04-03 19:13:35,096] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-03 19:13:35,096] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA temp.table_info("monthly_bills")
+[2026-04-03 19:13:35,096] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-03 19:13:35,098] sqlalchemy.engine.Engine:1901 - INFO - 
+CREATE TABLE feeders (
+	id INTEGER NOT NULL, 
+	feeder_code VARCHAR(50) NOT NULL, 
+	location VARCHAR(255), 
+	total_capacity_kw FLOAT, 
+	created_at DATETIME, 
+	updated_at DATETIME, 
+	PRIMARY KEY (id), 
+	UNIQUE (feeder_code)
+)
+
+
+[2026-04-03 19:13:35,100] sqlalchemy.engine.Engine:1906 - INFO - [no key 0.00032s] ()
+[2026-04-03 19:13:35,141] sqlalchemy.engine.Engine:1901 - INFO - CREATE INDEX ix_feeders_id ON feeders (id)
+[2026-04-03 19:13:35,141] sqlalchemy.engine.Engine:1906 - INFO - [no key 0.00034s] ()
+[2026-04-03 19:13:35,167] sqlalchemy.engine.Engine:1901 - INFO - 
+CREATE TABLE houses (
+	id INTEGER NOT NULL, 
+	house_id VARCHAR(50) NOT NULL, 
+	feeder_id INTEGER NOT NULL, 
+	prosumer_type VARCHAR(20), 
+	owner_name VARCHAR(255), 
+	phone VARCHAR(20), 
+	email VARCHAR(255), 
+	algorand_address VARCHAR(58), 
+	algorand_private_key TEXT, 
+	opt_in_sun_asa BOOLEAN, 
+	wallet_created_at DATETIME, 
+	solar_capacity_kw FLOAT, 
+	monthly_avg_consumption FLOAT, 
+	current_month_generation_kwh FLOAT, 
+	current_month_sun_minted FLOAT, 
+	current_month_sun_received FLOAT, 
+	current_month_sun_transferred FLOAT, 
+	is_active BOOLEAN, 
+	created_at DATETIME, 
+	updated_at DATETIME, 
+	PRIMARY KEY (id), 
+	UNIQUE (house_id), 
+	FOREIGN KEY(feeder_id) REFERENCES feeders (id), 
+	UNIQUE (algorand_address)
+)
+
+
+[2026-04-03 19:13:35,167] sqlalchemy.engine.Engine:1906 - INFO - [no key 0.00041s] ()
+[2026-04-03 19:13:35,191] sqlalchemy.engine.Engine:1901 - INFO - CREATE INDEX ix_houses_id ON houses (id)
+[2026-04-03 19:13:35,191] sqlalchemy.engine.Engine:1906 - INFO - [no key 0.00024s] ()
+[2026-04-03 19:13:35,223] sqlalchemy.engine.Engine:1901 - INFO - 
+CREATE TABLE pool_states (
+	id INTEGER NOT NULL, 
+	feeder_id INTEGER NOT NULL, 
+	current_supply_kwh FLOAT, 
+	current_demand_kwh FLOAT, 
+	potential_shortage FLOAT, 
+	grid_drawdown FLOAT, 
+	timestamp DATETIME, 
+	created_at DATETIME, 
+	PRIMARY KEY (id), 
+	FOREIGN KEY(feeder_id) REFERENCES feeders (id)
+)
+
+
+[2026-04-03 19:13:35,223] sqlalchemy.engine.Engine:1906 - INFO - [no key 0.00038s] ()
+[2026-04-03 19:13:35,242] sqlalchemy.engine.Engine:1901 - INFO - CREATE INDEX ix_pool_states_timestamp ON pool_states (timestamp)
+[2026-04-03 19:13:35,242] sqlalchemy.engine.Engine:1906 - INFO - [no key 0.00033s] ()
+[2026-04-03 19:13:35,255] sqlalchemy.engine.Engine:1901 - INFO - CREATE INDEX ix_pool_states_id ON pool_states (id)
+[2026-04-03 19:13:35,255] sqlalchemy.engine.Engine:1906 - INFO - [no key 0.00035s] ()
+[2026-04-03 19:13:35,268] sqlalchemy.engine.Engine:1901 - INFO - 
+CREATE TABLE daily_logs (
+	id INTEGER NOT NULL, 
+	feeder_id INTEGER NOT NULL, 
+	log_date VARCHAR(10), 
+	total_generation_kwh FLOAT, 
+	total_demand_kwh FLOAT, 
+	total_pool_allocation_kwh FLOAT, 
+	total_grid_drawdown_kwh FLOAT, 
+	log_hash VARCHAR(100), 
+	blockchain_txn VARCHAR(100), 
+	created_at DATETIME, 
+	PRIMARY KEY (id), 
+	FOREIGN KEY(feeder_id) REFERENCES feeders (id)
+)
+
+
+[2026-04-03 19:13:35,268] sqlalchemy.engine.Engine:1906 - INFO - [no key 0.00027s] ()
+[2026-04-03 19:13:35,280] sqlalchemy.engine.Engine:1901 - INFO - CREATE UNIQUE INDEX ix_daily_logs_log_date ON daily_logs (log_date)
+[2026-04-03 19:13:35,280] sqlalchemy.engine.Engine:1906 - INFO - [no key 0.00033s] ()
+[2026-04-03 19:13:35,293] sqlalchemy.engine.Engine:1901 - INFO - CREATE INDEX ix_daily_logs_id ON daily_logs (id)
+[2026-04-03 19:13:35,293] sqlalchemy.engine.Engine:1906 - INFO - [no key 0.00074s] ()
+[2026-04-03 19:13:35,306] sqlalchemy.engine.Engine:1901 - INFO - 
+CREATE TABLE generation_records (
+	id INTEGER NOT NULL, 
+	house_id INTEGER NOT NULL, 
+	generation_kwh FLOAT NOT NULL, 
+	timestamp DATETIME, 
+	device_id VARCHAR(50), 
+	signal_strength FLOAT, 
+	created_at DATETIME, 
+	PRIMARY KEY (id), 
+	FOREIGN KEY(house_id) REFERENCES houses (id)
+)
+
+
+[2026-04-03 19:13:35,307] sqlalchemy.engine.Engine:1906 - INFO - [no key 0.00035s] ()
+[2026-04-03 19:13:35,320] sqlalchemy.engine.Engine:1901 - INFO - CREATE INDEX ix_generation_records_timestamp ON generation_records (timestamp)
+[2026-04-03 19:13:35,320] sqlalchemy.engine.Engine:1906 - INFO - [no key 0.00033s] ()
+[2026-04-03 19:13:35,334] sqlalchemy.engine.Engine:1901 - INFO - CREATE INDEX ix_generation_records_id ON generation_records (id)
+[2026-04-03 19:13:35,334] sqlalchemy.engine.Engine:1906 - INFO - [no key 0.00030s] ()
+[2026-04-03 19:13:35,353] sqlalchemy.engine.Engine:1901 - INFO - 
+CREATE TABLE demand_records (
+	id INTEGER NOT NULL, 
+	house_id INTEGER NOT NULL, 
+	demand_kwh FLOAT NOT NULL, 
+	priority_level INTEGER, 
+	duration_hours FLOAT, 
+	timestamp DATETIME, 
+	status VARCHAR(20), 
+	created_at DATETIME, 
+	PRIMARY KEY (id), 
+	FOREIGN KEY(house_id) REFERENCES houses (id)
+)
+
+
+[2026-04-03 19:13:35,353] sqlalchemy.engine.Engine:1906 - INFO - [no key 0.00034s] ()
+[2026-04-03 19:13:35,366] sqlalchemy.engine.Engine:1901 - INFO - CREATE INDEX ix_demand_records_timestamp ON demand_records (timestamp)
+[2026-04-03 19:13:35,366] sqlalchemy.engine.Engine:1906 - INFO - [no key 0.00025s] ()
+[2026-04-03 19:13:35,378] sqlalchemy.engine.Engine:1901 - INFO - CREATE INDEX ix_demand_records_id ON demand_records (id)
+[2026-04-03 19:13:35,378] sqlalchemy.engine.Engine:1906 - INFO - [no key 0.00026s] ()
+[2026-04-03 19:13:35,390] sqlalchemy.engine.Engine:1901 - INFO - 
+CREATE TABLE allocations (
+	id INTEGER NOT NULL, 
+	house_id INTEGER NOT NULL, 
+	allocated_kwh FLOAT NOT NULL, 
+	source_type VARCHAR(20), 
+	status VARCHAR(20), 
+	ai_reasoning TEXT, 
+	transaction_hash VARCHAR(100), 
+	created_at DATETIME, 
+	settlement_date DATETIME, 
+	PRIMARY KEY (id), 
+	FOREIGN KEY(house_id) REFERENCES houses (id)
+)
+
+
+[2026-04-03 19:13:35,390] sqlalchemy.engine.Engine:1906 - INFO - [no key 0.00026s] ()
+[2026-04-03 19:13:35,402] sqlalchemy.engine.Engine:1901 - INFO - CREATE INDEX ix_allocations_id ON allocations (id)
+[2026-04-03 19:13:35,402] sqlalchemy.engine.Engine:1906 - INFO - [no key 0.00029s] ()
+[2026-04-03 19:13:35,426] sqlalchemy.engine.Engine:1901 - INFO - 
+CREATE TABLE monthly_bills (
+	id INTEGER NOT NULL, 
+	house_id INTEGER NOT NULL, 
+	month_year VARCHAR(7), 
+	solar_generated_kwh FLOAT, 
+	solar_exported_kwh FLOAT, 
+	pool_bought_kwh FLOAT, 
+	pool_sold_kwh FLOAT, 
+	grid_bought_kwh FLOAT, 
+	solar_export_credit FLOAT, 
+	pool_sale_credit FLOAT, 
+	pool_purchase_charge FLOAT, 
+	grid_purchase_charge FLOAT, 
+	discom_fixed_charge FLOAT, 
+	discom_admin_fee FLOAT, 
+	net_payable FLOAT, 
+	bill_hash VARCHAR(100), 
+	blockchain_txn VARCHAR(100), 
+	sun_asa_minted FLOAT, 
+	status VARCHAR(20), 
+	created_at DATETIME, 
+	finalized_at DATETIME, 
+	PRIMARY KEY (id), 
+	FOREIGN KEY(house_id) REFERENCES houses (id)
+)
+
+
+[2026-04-03 19:13:35,426] sqlalchemy.engine.Engine:1906 - INFO - [no key 0.00031s] ()
+[2026-04-03 19:13:35,438] sqlalchemy.engine.Engine:1901 - INFO - CREATE INDEX ix_monthly_bills_id ON monthly_bills (id)
+[2026-04-03 19:13:35,438] sqlalchemy.engine.Engine:1906 - INFO - [no key 0.00024s] ()
+[2026-04-03 19:13:35,450] sqlalchemy.engine.Engine:1901 - INFO - CREATE INDEX ix_monthly_bills_month_year ON monthly_bills (month_year)
+[2026-04-03 19:13:35,451] sqlalchemy.engine.Engine:1906 - INFO - [no key 0.00033s] ()
+[2026-04-03 19:13:35,462] sqlalchemy.engine.Engine:1134 - INFO - COMMIT
+[2026-04-03 19:13:35,462] app.database:30 - INFO - Database initialized successfully
+[2026-04-03 19:13:35,463] main:30 - INFO - Environment: development
+[2026-04-03 19:13:35,463] main:31 - INFO - Debug mode: True
+[2026-04-03 19:21:45,697] app.database:28 - INFO - Initializing database...
+[2026-04-03 19:21:45,701] sqlalchemy.engine.Engine:1091 - INFO - BEGIN (implicit)
+[2026-04-03 19:21:45,701] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA main.table_info("feeders")
+[2026-04-03 19:21:45,701] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-03 19:21:45,704] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA main.table_info("houses")
+[2026-04-03 19:21:45,704] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-03 19:21:45,705] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA main.table_info("generation_records")
+[2026-04-03 19:21:45,705] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-03 19:21:45,705] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA main.table_info("demand_records")
+[2026-04-03 19:21:45,705] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-03 19:21:45,706] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA main.table_info("allocations")
+[2026-04-03 19:21:45,706] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-03 19:21:45,707] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA main.table_info("pool_states")
+[2026-04-03 19:21:45,707] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-03 19:21:45,707] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA main.table_info("daily_logs")
+[2026-04-03 19:21:45,707] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-03 19:21:45,707] sqlalchemy.engine.Engine:1901 - INFO - PRAGMA main.table_info("monthly_bills")
+[2026-04-03 19:21:45,708] sqlalchemy.engine.Engine:1906 - INFO - [raw sql] ()
+[2026-04-03 19:21:45,709] sqlalchemy.engine.Engine:1134 - INFO - COMMIT
+[2026-04-03 19:21:45,709] app.database:30 - INFO - Database initialized successfully
+[2026-04-03 19:21:45,709] main:30 - INFO - Environment: development
+[2026-04-03 19:21:45,709] main:31 - INFO - Debug mode: True

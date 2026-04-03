@@ -129,18 +129,8 @@ async def submit_iot_demand(data: IoTDemandData, db: Session = Depends(get_db)):
     demand.status = "fulfilled" if result["grid_kwh"] == 0 else "partial"
     db.commit()
 
-    # Save allocation to database
-    allocation = Allocation(
-        house_id=house.id,
-        allocated_kwh=result["pool_kwh"],
-        source_type="pool" if result["grid_kwh"] == 0 else "hybrid",
-        status="confirmed",
-        ai_reasoning=result["ai_reasoning"],
-        transaction_hash=result.get("blockchain_tx"),
-    )
-    db.add(allocation)
-    db.commit()
-    db.refresh(allocation)
+    # NOTE: Allocation is already created by MatchingEngine.match_demand()
+    # No need to create a duplicate here - matching engine handles it
 
     logger.info(
         f"IoT Demand matched: {data.house_id} → "
@@ -154,6 +144,7 @@ async def submit_iot_demand(data: IoTDemandData, db: Session = Depends(get_db)):
         "grid_required_kwh": result["grid_kwh"],
         "allocation_status": "matched" if result["grid_kwh"] == 0 else "partial",
         "ai_reasoning": result["ai_reasoning"],
+        "estimated_cost_inr": (result["pool_kwh"] * 9) + (result["grid_kwh"] * 12),
         "sun_tokens_minted": result.get("sun_tokens_minted", 0),
         "blockchain_tx": result.get("blockchain_tx"),
     }
@@ -167,6 +158,21 @@ async def get_demand_status(house_id: str, db: Session = Depends(get_db)):
     """
     # Get device status
     iot_status = iot_service.get_buyer_demand(house_id)
+    
+    # Helper function to check device online status (within 30 seconds)
+    def is_device_online(last_update_str):
+        try:
+            if not last_update_str:
+                return False
+            # Parse ISO format timestamp
+            last_update = datetime.fromisoformat(last_update_str.replace('Z', '+00:00'))
+            # Remove timezone info for comparison
+            last_update_naive = last_update.replace(tzinfo=None)
+            time_diff = datetime.utcnow() - last_update_naive
+            return time_diff.total_seconds() < 30  # Device online if updated within 30 seconds
+        except Exception as e:
+            logger.warning(f"Error parsing timestamp for {house_id}: {e}")
+            return False
     
     if not iot_status:
         return {
@@ -182,7 +188,7 @@ async def get_demand_status(house_id: str, db: Session = Depends(get_db)):
         return {
             "house_id": house_id,
             "current_demand_kwh": iot_status.get("demand_kwh", 0),
-            "device_online": True,
+            "device_online": is_device_online(iot_status.get("last_update")),
             "allocation": None,
         }
 
@@ -209,7 +215,7 @@ async def get_demand_status(house_id: str, db: Session = Depends(get_db)):
         return {
             "house_id": house_id,
             "current_demand_kwh": iot_status.get("demand_kwh", 0),
-            "device_online": True,
+            "device_online": is_device_online(iot_status.get("last_update")),
             "last_update": iot_status.get("last_update"),
             "allocation": {
                 "demand_id": latest_demand.id,
@@ -229,6 +235,6 @@ async def get_demand_status(house_id: str, db: Session = Depends(get_db)):
     return {
         "house_id": house_id,
         "current_demand_kwh": iot_status.get("demand_kwh", 0),
-        "device_online": True,
+        "device_online": is_device_online(iot_status.get("last_update")),
         "allocation": None,
     }
