@@ -218,12 +218,19 @@ async def get_demand_status(house_id: str, db: Session = Depends(get_db)):
             logger.warning(f"Error checking device online for {house_id}: {e}")
             device_online = False
 
-    # Current demand - prefer in-memory if available, else use latest database record
+    # Current demand - ALWAYS use the freshest data available
+    # Priority: 1) In-memory cache (real-time) 2) Very recent DB record (within 5 seconds)
     current_demand_kwh = 0
+    last_update_timestamp = None
+    
     if iot_status:
+        # In-memory cache is fresh (updated every POST)
         current_demand_kwh = iot_status.get("demand_kwh", 0)
+        last_update_timestamp = iot_status.get("last_update")
     elif latest_demand:
+        # Database fallback - use latest record (should be from recent POST)
         current_demand_kwh = latest_demand.demand_kwh
+        last_update_timestamp = latest_demand.created_at.isoformat() if hasattr(latest_demand.created_at, 'isoformat') else str(latest_demand.created_at)
 
     # If no demand data at all, return early
     if not iot_status and not latest_demand:
@@ -244,22 +251,23 @@ async def get_demand_status(house_id: str, db: Session = Depends(get_db)):
         )
         
         allocated_kwh = allocation.allocated_kwh if allocation else 0
-        grid_required = latest_demand.demand_kwh - allocated_kwh
+        # Use current_demand_kwh (freshest available) for grid calculation
+        grid_required = max(0, current_demand_kwh - allocated_kwh)
         
         return {
             "house_id": house_id,
             "current_demand_kwh": current_demand_kwh,
             "device_online": device_online,
-            "last_update": iot_status.get("last_update") if iot_status else latest_demand.created_at.isoformat(),
+            "last_update": last_update_timestamp,
             "allocation": {
                 "demand_id": latest_demand.id,
-                "demand_kwh": latest_demand.demand_kwh,
+                "demand_kwh": current_demand_kwh,  # Show current demand, not just DB record
                 "allocation_status": "matched" if latest_demand.status == "fulfilled" else "partial",
                 "allocated_kwh": allocated_kwh,
-                "grid_required_kwh": max(0, grid_required),
+                "grid_required_kwh": grid_required,
                 "status": latest_demand.status,
                 "ai_reasoning": allocation.ai_reasoning if allocation else "Matching in progress...",
-                "estimated_cost_inr": (allocated_kwh * 9) + (max(0, grid_required) * 12),
+                "estimated_cost_inr": (allocated_kwh * 9) + (grid_required * 12),
                 "sun_tokens_minted": 0,
                 "blockchain_tx": allocation.transaction_hash if allocation else None,
                 "created_at": latest_demand.created_at.isoformat(),
@@ -270,5 +278,6 @@ async def get_demand_status(house_id: str, db: Session = Depends(get_db)):
         "house_id": house_id,
         "current_demand_kwh": current_demand_kwh,
         "device_online": device_online,
+        "last_update": last_update_timestamp,
         "allocation": None,
     }
