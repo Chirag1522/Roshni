@@ -26,9 +26,14 @@ async def lifespan(app: FastAPI):
     """Application lifespan context manager."""
     # Startup
     logger.info("🌞 ROSHNI Backend Starting...")
-    init_db()
-    logger.info(f"Environment: {settings.environment}")
-    logger.info(f"Debug mode: {settings.debug}")
+    try:
+        init_db()
+        logger.info(f"Environment: {settings.environment}")
+        logger.info(f"Debug mode: {settings.debug}")
+        logger.info("✅ Database initialized successfully")
+    except Exception as e:
+        logger.warning(f"⚠️ Database initialization warning: {e}")
+        logger.info("Continuing without database init (will retry on first query)")
     yield
     # Shutdown
     logger.info("🌞 ROSHNI Backend Shutting Down...")
