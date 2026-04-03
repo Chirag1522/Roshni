@@ -14,9 +14,8 @@ export default defineConfig({
     },
   },
 
-  // 🔥 THIS FIXES YOUR RENDER ERROR
   preview: {
     host: true,
-    allowedHosts: "all"
+    allowedHosts: ['roshni-f74j.onrender.com']
   }
 })
