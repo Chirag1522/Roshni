@@ -45,14 +45,7 @@ export default function Navbar({ darkMode, setDarkMode, onMenuClick }) {
           >
             {darkMode ? '☀️' : '🌙'}
           </button>
-          <button
-            className="theme-toggle"
-            onClick={handleVoiceToggle}
-            title={voiceEnabled ? 'Voice enabled - Click to disable' : 'Voice disabled - Click to enable'}
-            style={{ opacity: voiceEnabled ? 1 : 0.5 }}
-          >
-            {voiceEnabled ? '🔊' : '🔇'}
-          </button>
+          
         </div>
       </div>
     </nav>
