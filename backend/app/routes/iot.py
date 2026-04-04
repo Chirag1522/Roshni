@@ -12,6 +12,8 @@ from app.database import get_db
 from app.models import House, GenerationRecord, DemandRecord, Allocation
 from app.services.iot_service import iot_service
 from app.services.matching_engine import MatchingEngine
+from app.services.pool_engine import PoolEngine
+from config import settings
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -46,7 +48,7 @@ async def unified_iot_update(data: IoTData, db: Session = Depends(get_db)):
     Backend determines device type based on which field is provided.
     """
     # Auth check
-    if data.auth_token != "iot_secret_token_12345":
+    if data.auth_token != settings.iot_auth_token:
         raise HTTPException(status_code=401, detail="Invalid auth token")
 
     # Find house
@@ -77,6 +79,12 @@ async def unified_iot_update(data: IoTData, db: Session = Depends(get_db)):
             generation_kwh=data.generation_kwh,
             signal_strength=data.signal_strength,
         )
+
+        # Persist refreshed feeder pool state immediately for faster live dashboard sync.
+        try:
+            PoolEngine(db).update_pool_state(house.feeder_id)
+        except Exception as e:
+            logger.warning(f"[IoT/Update] Pool state refresh skipped for {data.house_id}: {e}")
 
         logger.info(f"[IoT/Update] ✅ Generation recorded and cached for {data.house_id}")
 
@@ -133,7 +141,7 @@ async def unified_iot_update(data: IoTData, db: Session = Depends(get_db)):
                 "grid_kwh": data.demand_kwh,
                 "ai_reasoning": "Fallback: matching failed, using grid",
                 "estimated_pool_cost_inr": 0,
-                "estimated_grid_cost_inr": data.demand_kwh * 12,
+                "estimated_grid_cost_inr": data.demand_kwh * settings.discom_grid_rate,
                 "sun_tokens_minted": 0,
                 "blockchain_tx": None,
                 "allocation_id": None,
@@ -191,7 +199,7 @@ async def test_generate(data: IoTData, db: Session = Depends(get_db)):
     Test endpoint to simulate IoT generation.
     """
     # Auth check
-    if data.auth_token != "iot_secret_token_12345":
+    if data.auth_token != settings.iot_auth_token:
         raise HTTPException(status_code=401, detail="Invalid auth token")
 
     # Find house
@@ -230,7 +238,7 @@ async def submit_iot_demand(data: IoTDemandData, db: Session = Depends(get_db)):
     Automatically triggers matching and returns allocation (pool or grid).
     """
     # Auth check
-    if data.auth_token != "iot_secret_token_12345":
+    if data.auth_token != settings.iot_auth_token:
         raise HTTPException(status_code=401, detail="Invalid auth token")
 
     # Find house
@@ -277,7 +285,7 @@ async def submit_iot_demand(data: IoTDemandData, db: Session = Depends(get_db)):
             "grid_kwh": data.demand_kwh,
             "ai_reasoning": "Fallback: matching failed, using grid",
             "estimated_pool_cost_inr": 0,
-            "estimated_grid_cost_inr": data.demand_kwh * 12,
+            "estimated_grid_cost_inr": data.demand_kwh * settings.discom_grid_rate,
             "sun_tokens_minted": 0,
             "blockchain_tx": None,
             "allocation_id": None,
@@ -352,7 +360,7 @@ async def test_iot_demand(house_id: str, demand_kwh: float, db: Session = Depend
             "grid_kwh": demand_kwh,
             "ai_reasoning": "Test fallback",
             "estimated_pool_cost_inr": 0,
-            "estimated_grid_cost_inr": demand_kwh * 12,
+            "estimated_grid_cost_inr": demand_kwh * settings.discom_grid_rate,
             "sun_tokens_minted": 0,
             "blockchain_tx": None,
             "allocation_id": None,
@@ -369,6 +377,22 @@ async def test_iot_demand(house_id: str, demand_kwh: float, db: Session = Depend
         "grid_required_kwh": result["grid_kwh"],
         "allocation_status": "matched" if result["grid_kwh"] == 0 else "partial",
         "message": "Test demand submitted successfully. Check GET /iot/demand-status to verify.",
+    }
+
+
+@router.get("/status/{house_id}")
+async def get_iot_status(house_id: str):
+    """Get latest seller/prosumer IoT generation status for dashboard."""
+    status = iot_service.get_device_status(house_id)
+    if status:
+        return status
+
+    return {
+        "status": "offline",
+        "house_id": house_id,
+        "generation_kwh": 0,
+        "signal_strength": 0,
+        "message": "No IoT device data available",
     }
 
 
@@ -475,6 +499,8 @@ async def get_demand_status(house_id: str, db: Session = Depends(get_db)):
         }
 
     # Get related allocation data (only if device is online or has in-memory cache)
+    pool_state_data = PoolEngine(db).get_pool_state(house.feeder_id)
+
     if latest_demand:
         allocation = (
             db.query(Allocation)
@@ -502,11 +528,13 @@ async def get_demand_status(house_id: str, db: Session = Depends(get_db)):
                 "grid_required_kwh": grid_required,
                 "status": latest_demand.status,
                 "ai_reasoning": allocation.ai_reasoning if allocation else "Matching in progress...",
-                "estimated_cost_inr": (allocated_kwh * 9) + (grid_required * 12),
+                "estimated_cost_inr": (allocated_kwh * settings.solar_pool_rate) + (grid_required * settings.discom_grid_rate),
                 "sun_tokens_minted": 0,
                 "blockchain_tx": allocation.transaction_hash if allocation else None,
                 "created_at": latest_demand.created_at.isoformat(),
             },
+            "pool_supply_kwh": pool_state_data.get("current_supply_kwh", 0),
+            "pool_demand_kwh": pool_state_data.get("current_demand_kwh", 0),
         }
 
     logger.info(f"[GET] Fallback return: demand={current_demand_kwh}kWh, online={device_online}, no allocation")
@@ -516,5 +544,7 @@ async def get_demand_status(house_id: str, db: Session = Depends(get_db)):
         "current_demand_kwh": current_demand_kwh,
         "device_online": device_online,
         "last_update": last_update_timestamp,
+        "pool_supply_kwh": pool_state_data.get("current_supply_kwh", 0),
+        "pool_demand_kwh": pool_state_data.get("current_demand_kwh", 0),
         "allocation": None,
     }

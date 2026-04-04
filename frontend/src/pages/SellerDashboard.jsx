@@ -18,17 +18,17 @@ export default function SellerDashboard({ houseId }) {
     fetchDashboard()
     const interval = setInterval(() => {
       fetchDashboard()
-    }, 5000)
+    }, 2000)
     return () => clearInterval(interval)
   }, [houseId])
 
   useEffect(() => {
     // Only fetch IoT data if this is actually a prosumer/seller house
-    if (dashboard && (dashboard.prosumer_type === 'prosumer' || dashboard.prosumer_type === 'seller')) {
+    if (dashboard && ['prosumer', 'seller', 'generator'].includes(dashboard.prosumer_type)) {
       fetchIoTData()
       const interval = setInterval(() => {
         fetchIoTData()
-      }, 5000)
+      }, 2000)
       return () => clearInterval(interval)
     }
   }, [houseId, dashboard?.prosumer_type])
@@ -87,16 +87,15 @@ export default function SellerDashboard({ houseId }) {
   // Use real IoT data for live metrics
   const currentGeneration = iotData?.generation_kwh || 0
   const cumulativeGeneration = iotData?.cumulative_kwh || 0
-  const supply = cumulativeGeneration  // Total pool energy accumulated
+  const supply = dashboard.live_pool_state?.current_supply_kwh || 0
   const pendingDemand = dashboard.live_pool_state?.current_demand_kwh || 0
   const todayFulfilled = dashboard.live_pool_state?.today_fulfilled_kwh || 0
   const todayTrades = dashboard.live_pool_state?.today_trade_count || 0
-  // Show fulfilled demand if no pending — gives a live sense of activity
-  const demand = pendingDemand > 0 ? pendingDemand : todayFulfilled
+  const demand = pendingDemand
   const poolUtilPct = supply > 0 ? Math.min(100, (todayFulfilled / supply) * 100) : 0
 
-  // Calculate earnings based on cumulative generation
-  const earningsEstimate = cumulativeGeneration * 9  // ₹9/kWh for total accumulated
+  // Use backend-calculated estimate based on configured pool rate.
+  const earningsEstimate = dashboard.allocation_earnings_estimate_inr || 0
 
   return (
     <div>
@@ -240,7 +239,7 @@ demands prioritizing high-priority consumers and minimizing grid usage.`}
       <div className="alert info" style={{ marginTop: '1.5rem' }}>
         <strong>ℹ️ How it works:</strong> Your solar generation fills the feeder pool.
         Buyers request allocation — AI decides how much comes from pool vs grid.
-        You earn ₹9/kWh for pool sales + DISCOM export credits.
+        You earn ₹6/kWh for pool sales + DISCOM export credits.
       </div>
     </div>
   )

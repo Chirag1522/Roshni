@@ -18,7 +18,7 @@ export default function BuyerDashboard({ houseId }) {
     fetchDashboard()
     const interval = setInterval(() => {
       fetchDashboard()
-    }, 5000)
+    }, 2000)
     return () => clearInterval(interval)
   }, [houseId])
 
@@ -28,7 +28,7 @@ export default function BuyerDashboard({ houseId }) {
       fetchIotDemand()
       const interval = setInterval(() => {
         fetchIotDemand()
-      }, 5000)
+      }, 2000)
       return () => clearInterval(interval)
     }
   }, [houseId, dashboard?.prosumer_type])
@@ -86,16 +86,19 @@ export default function BuyerDashboard({ houseId }) {
 
   // Extract data
   const currentDemand = iotDemand?.current_demand_kwh || 0
+  const poolDemand = iotDemand?.pool_demand_kwh ?? dashboard.live_pool_state?.current_demand_kwh ?? currentDemand
+  const poolSupply = iotDemand?.pool_supply_kwh ?? dashboard.live_pool_state?.current_supply_kwh ?? 0
   const allocation = iotDemand?.allocation || null
   const allocatedKwh = allocation?.allocated_kwh || 0
   const gridKwh = allocation?.grid_required_kwh || 0
   const totalDemand = allocation?.demand_kwh || currentDemand
+  const safeTotalDemand = totalDemand > 0 ? totalDemand : 1
 
   const todayDemandKwh = dashboard.demand_summary?.today_demand_kwh || 0
-  const allocationRate = allocation ? ((allocatedKwh / totalDemand) * 100) : 0
-  const gridDependency = allocation ? ((gridKwh / totalDemand) * 100) : 0
+  const allocationRate = allocation ? ((allocatedKwh / safeTotalDemand) * 100) : 0
+  const gridDependency = allocation ? ((gridKwh / safeTotalDemand) * 100) : 0
 
-  const savingsEstimate = allocatedKwh * 3 // ₹3 saved per kWh (₹12 grid - ₹9 pool)
+  const savingsEstimate = allocatedKwh * 3 // ₹3 saved per kWh (₹9 grid - ₹6 pool)
   const costEstimate = allocation?.estimated_cost_inr || 0
 
   return (
@@ -116,11 +119,11 @@ export default function BuyerDashboard({ houseId }) {
       {/* Top metrics */}
       <div className="grid grid-3">
         <div className="metric-box info">
-          <div className="metric-label">Current Demand</div>
+          <div className="metric-label">Pool Demand</div>
           <div className="metric-value">
-            {currentDemand.toFixed(2)}
+            {poolDemand.toFixed(2)}
           </div>
-          <div style={{ fontSize: '0.85rem' }}>kW (Live from IoT)</div>
+          <div style={{ fontSize: '0.85rem' }}>kWh (Shared with seller view)</div>
         </div>
         <div className="metric-box success">
           <div className="metric-label">From Pool</div>
@@ -142,6 +145,12 @@ export default function BuyerDashboard({ houseId }) {
             <div style={{ opacity: 0.7, fontSize: '0.9rem' }}>Current Demand</div>
             <div style={{ fontSize: '1.4rem', fontWeight: 'bold', color: '#3498db' }}>
               {currentDemand.toFixed(2)} kW
+            </div>
+          </div>
+          <div>
+            <div style={{ opacity: 0.7, fontSize: '0.9rem' }}>Pool Supply</div>
+            <div style={{ fontSize: '1.4rem', fontWeight: 'bold', color: '#2ecc71' }}>
+              {poolSupply.toFixed(2)} kWh
             </div>
           </div>
           <div>
@@ -212,12 +221,12 @@ export default function BuyerDashboard({ houseId }) {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
             <div style={{ paddingRight: '1rem', borderRight: '1px solid rgba(255,255,255,0.1)' }}>
               <div style={{ marginBottom: '1.5rem' }}>
-                <div style={{ opacity: 0.7, fontSize: '0.9rem', marginBottom: '0.5rem' }}>From Solar Pool (₹9/kWh)</div>
+                <div style={{ opacity: 0.7, fontSize: '0.9rem', marginBottom: '0.5rem' }}>From Solar Pool (₹6/kWh)</div>
                 <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#27ae60', marginBottom: '0.25rem' }}>
                   {allocatedKwh.toFixed(2)} kWh
                 </div>
                 <div style={{ fontSize: '0.9rem', color: '#27ae60' }}>
-                  ₹{(allocatedKwh * 9).toFixed(2)} cost
+                  ₹{(allocatedKwh * 6).toFixed(2)} cost
                 </div>
               </div>
               <div>
@@ -229,12 +238,12 @@ export default function BuyerDashboard({ houseId }) {
             </div>
             <div style={{ paddingLeft: '1rem' }}>
               <div style={{ marginBottom: '1.5rem' }}>
-                <div style={{ opacity: 0.7, fontSize: '0.9rem', marginBottom: '0.5rem' }}>Grid Fallback (₹12/kWh)</div>
+                <div style={{ opacity: 0.7, fontSize: '0.9rem', marginBottom: '0.5rem' }}>Grid Fallback (₹9/kWh)</div>
                 <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#ff6b6b', marginBottom: '0.25rem' }}>
                   {gridKwh.toFixed(2)} kWh
                 </div>
                 <div style={{ fontSize: '0.9rem', color: '#ff6b6b' }}>
-                  ₹{(gridKwh * 12).toFixed(2)} cost
+                  ₹{(gridKwh * 9).toFixed(2)} cost
                 </div>
               </div>
               {savingsEstimate > 0 && (
@@ -282,7 +291,7 @@ export default function BuyerDashboard({ houseId }) {
             <div>
               <div style={{ opacity: 0.7, fontSize: '0.9rem' }}>Total Cost</div>
               <div style={{ fontSize: '1.4rem', fontWeight: 'bold', color: '#e67e22' }}>
-                ₹{(todayDemandKwh * 9.5).toFixed(2)}
+                ₹{(todayDemandKwh * 6).toFixed(2)}
               </div>
             </div>
           </div>
@@ -303,8 +312,8 @@ export default function BuyerDashboard({ houseId }) {
           <AIReasoningConsole
             reasoning={`Buyer Energy Analysis:
 - Current Demand: ${currentDemand.toFixed(2)} kW
-- From Pool: ${allocatedKwh.toFixed(2)} kWh @ ₹9/kWh
-- From Grid: ${gridKwh.toFixed(2)} kWh @ ₹12/kWh
+- From Pool: ${allocatedKwh.toFixed(2)} kWh @ ₹6/kWh
+- From Grid: ${gridKwh.toFixed(2)} kWh @ ₹9/kWh
 - Pool Allocation Rate: ${allocationRate.toFixed(0)}%
 - Grid Dependency: ${gridDependency.toFixed(0)}%
 - Estimated Savings: ₹${savingsEstimate.toFixed(2)}
@@ -320,7 +329,7 @@ Higher pool allocation = more savings + less carbon footprint.`}
 
       <div className="alert info" style={{ marginTop: '1.5rem' }}>
         <strong>ℹ️ How it works:</strong> Your IoT device sends demand automatically.
-        AI allocates from the solar pool first (₹9/kWh), then grid (₹12/kWh) if needed.
+        AI allocates from the solar pool first (₹6/kWh), then grid (₹9/kWh) if needed.
         The more renewable energy available = more savings for you!
       </div>
     </div>

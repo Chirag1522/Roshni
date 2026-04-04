@@ -44,11 +44,11 @@ class Settings(BaseSettings):
     discom_fixed_charge: float = 100.0
     discom_admin_fee_percent: float = 2.0
     discom_export_rate: float = 8.0
-    discom_grid_rate: float = 12.0
+    discom_grid_rate: float = 9.0
 
     # ================= SOLAR PRICING =================
     solar_export_rate: float = 10.0
-    solar_pool_rate: float = 9.0
+    solar_pool_rate: float = 6.0
 
     # ================= IOT =================
     iot_auth_token: str = "iot_secret_token_12345"

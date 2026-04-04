@@ -1,24 +1,20 @@
 """
-Monthly billing service with realistic slab-based electricity pricing.
-Aggregates transactions, calculates net payable using Rajasthan tariff.
-Ties to blockchain: SUN transfers, bill hashing.
+Monthly billing service for fixed-rate grid/pool settlement.
+Aggregates transactions and ties to blockchain: SUN transfers, bill hashing.
 """
 from sqlalchemy.orm import Session
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 import logging
 import json
+from typing import Optional
 
 from app.models import (
     House, GenerationRecord, DemandRecord, Allocation, MonthlyBill
 )
 from app.utils.hash_utils import sha256_hash
 from app.utils.pricing_models import (
-    RajasthanDomesticTariff,
-    RajasthanCommercialTariff,
     SolarExportRates,
-    PoolPricingModel,
-    calculate_house_bill
 )
 from app.services.blockchain_service import BlockchainService
 from config import settings
@@ -34,7 +30,7 @@ class BillingService:
     
     def generate_monthly_bill(self, house_id: int, month_year: str) -> MonthlyBill:
         """
-        Generate monthly bill for a house using realistic slab-based pricing.
+        Generate monthly bill for a house using fixed configured pricing.
         Accounts for prosumer type: pure generator, pure consumer, or prosumer.
         month_year: "2024-03" format
         """
@@ -80,21 +76,11 @@ class BillingService:
         # For pure generators: grid consumption = 0 (or minimal household use)
         grid_bought_kwh = max(0, house.monthly_avg_consumption - pool_bought_kwh)
 
-        # ============ REALISTIC SLAB-BASED PRICING ============
+        # ============ FIXED PRICING ============
 
         # 1. DISCOM CHARGES (for grid consumption)
-        house_type = "domestic"  # Default - can be determined from house_id pattern or additional field
-
-        # Calculate DISCOM bill for grid consumption
-        discom_bill_breakdown = calculate_house_bill(
-            house_type=house_type,
-            consumption_kwh=grid_bought_kwh,
-            grid_consumption_kwh=grid_bought_kwh,
-            sanctioned_load_kw=2.0  # Default, can be customized per house
-        )
-
-        grid_purchase_charge = discom_bill_breakdown["total_bill"]
-        discom_fixed_charge = discom_bill_breakdown["fixed_charge"]
+        grid_purchase_charge = grid_bought_kwh * settings.discom_grid_rate
+        discom_fixed_charge = settings.discom_fixed_charge
 
         # 2. SOLAR EXPORT CREDIT
         # Solar exported to grid gets buyback rates
@@ -102,10 +88,10 @@ class BillingService:
 
         # 3. POOL TRADING CREDITS AND CHARGES
         # Pool sold: prosumers receive money for surplus sold to other consumers
-        pool_sale_credit = pool_sold_kwh * PoolPricingModel.BASE_POOL_PRICE
+        pool_sale_credit = pool_sold_kwh * settings.solar_pool_rate
 
         # Pool bought: consumers pay pool rate (cheaper than grid rate)
-        pool_purchase_charge = pool_bought_kwh * PoolPricingModel.BASE_POOL_PRICE
+        pool_purchase_charge = pool_bought_kwh * settings.solar_pool_rate
 
         # 4. DISCOM ADMIN FEE
         # Fee on total settlement (pool sale + grid purchase)
@@ -150,14 +136,14 @@ class BillingService:
 
         logger.info(
             f"Bill generated for {house.house_id} ({month_year}): "
-            f"Grid: {grid_bought_kwh:.1f} kWh @ ₹{grid_purchase_charge:.2f}, "
-            f"Pool sold: {pool_sold_kwh:.1f} kWh @ ₹{pool_sale_credit:.2f}, "
-            f"Net payable: ₹{net_payable:.2f} (Slab-based pricing)"
+            f"Grid: {grid_bought_kwh:.1f} kWh @ ₹{settings.discom_grid_rate:.2f}/kWh, "
+            f"Pool sold: {pool_sold_kwh:.1f} kWh @ ₹{settings.solar_pool_rate:.2f}/kWh, "
+            f"Net payable: ₹{net_payable:.2f}"
         )
 
         return bill
     
-    def finalize_bill(self, bill_id: int, bill_hash: str = None) -> MonthlyBill:
+    def finalize_bill(self, bill_id: int, bill_hash: Optional[str] = None) -> MonthlyBill:
         """
         Finalize bill: create hash and record on blockchain.
         Bill hash = SHA256(full bill JSON) for integrity.

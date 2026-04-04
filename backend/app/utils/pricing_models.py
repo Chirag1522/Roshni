@@ -241,7 +241,7 @@ class SolarExportRates:
     COMMERCIAL_EXPORT_RATE = 5.5   # ₹/kWh - wholesale rate
 
     # Pool pricing (peer-to-peer renewable energy trading)
-    POOL_TRADING_RATE = 9.0  # ₹/kWh - negotiated between prosumer & consumer
+    POOL_TRADING_RATE = 6.0  # ₹/kWh - fixed pool trading rate
 
 
 class PoolPricingModel:
@@ -251,9 +251,9 @@ class PoolPricingModel:
     """
 
     # Base rates for ROSHNI pool
-    BASE_POOL_PRICE = 9.0           # ₹/kWh base rate
-    MIN_POOL_PRICE = 8.0            # Minimum (high supply, low demand)
-    MAX_POOL_PRICE = 10.5           # Maximum (low supply, high demand)
+    BASE_POOL_PRICE = 6.0           # ₹/kWh base rate
+    MIN_POOL_PRICE = 6.0            # Fixed pricing
+    MAX_POOL_PRICE = 6.0            # Fixed pricing
 
     # Price adjustment factors
     DEMAND_TO_SUPPLY_RATIO_MULTIPLIER = 0.8

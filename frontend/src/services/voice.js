@@ -112,7 +112,7 @@ class VoiceService {
 
     const kwh = result.allocated_kwh || result.allocated_energy || result.demand_kwh || 0
     if (kwh > 0) {
-      const savings = ((kwh * 12) - (kwh * 9)).toFixed(2)
+      const savings = ((kwh * 9) - (kwh * 6)).toFixed(2)
       await this.speak(`बिल स्वीकृत। आपने पूल से खरीदकर ${savings} रुपये की बचत की।`)
     }
   }

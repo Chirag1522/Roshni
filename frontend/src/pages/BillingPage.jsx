@@ -203,18 +203,18 @@ export default function BillingPage({ houseId }) {
           </div>
 
           <div style={{ marginTop: '2rem', padding: '1rem', background: 'rgba(52, 152, 219, 0.08)', borderRadius: '8px', borderLeft: '3px solid #3498db' }}>
-            <h4 style={{ marginBottom: '1rem', color: '#3498db' }}>⚡ Slab-Based Pricing Breakdown</h4>
+            <h4 style={{ marginBottom: '1rem', color: '#3498db' }}>⚡ Fixed Pricing Breakdown</h4>
             <p style={{ fontSize: '0.9rem', opacity: 0.8, marginBottom: '1rem' }}>
-              DISCOM charges use Rajasthan slab-based tariff. Grid consumption: <strong>{selectedBill.grid_bought_kwh.toFixed(2)} kWh</strong>
+              Grid and pool are configured as fixed rates. Grid consumption: <strong>{selectedBill.grid_bought_kwh.toFixed(2)} kWh</strong>
             </p>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem' }}>
               <div style={{ background: 'rgba(0, 0, 0, 0.3)', padding: '0.8rem', borderRadius: '6px' }}>
-                <div style={{ fontSize: '0.85rem', opacity: 0.7 }}>Energy Charges (Slab-Based)</div>
+                <div style={{ fontSize: '0.85rem', opacity: 0.7 }}>Energy Charges (Grid @ ₹9/kWh)</div>
                 <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#e74c3c', marginTop: '0.3rem' }}>
-                  ₹{(selectedBill.grid_purchase_charge - selectedBill.discom_fixed_charge - (selectedBill.discom_fixed_charge > 0 ? 20 : 0)).toFixed(2)}
+                  ₹{(selectedBill.grid_bought_kwh * 9).toFixed(2)}
                 </div>
                 <div style={{ fontSize: '0.75rem', marginTop: '0.5rem', opacity: 0.6 }}>
-                  Includes: Slab 1 (0-100 units) @ ₹3/kWh | Slab 2 (100-200) @ ₹5/kWh | Slab 3 (200+) @ ₹7.95/kWh
+                  Grid unit charge computed with fixed rate ₹9/kWh.
                 </div>
               </div>
               <div style={{ background: 'rgba(0, 0, 0, 0.3)', padding: '0.8rem', borderRadius: '6px' }}>
@@ -223,21 +223,21 @@ export default function BillingPage({ houseId }) {
                   ₹{selectedBill.discom_fixed_charge.toFixed(2)}
                 </div>
                 <div style={{ fontSize: '0.75rem', marginTop: '0.5rem', opacity: 0.6 }}>
-                  Includes: Fixed charge (₹120-360) + Meter rent (₹20) + Electricity duty (3%) + Surcharge (1.5%)
+                  Configured DISCOM fixed monthly charge.
                 </div>
               </div>
               <div style={{ background: 'rgba(0, 0, 0, 0.3)', padding: '0.8rem', borderRadius: '6px' }}>
                 <div style={{ fontSize: '0.85rem', opacity: 0.7 }}>Pool Rate (Peer-to-Peer)</div>
                 <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#27ae60', marginTop: '0.3rem' }}>
-                  ₹9.00/kWh
+                  ₹6.00/kWh
                 </div>
                 <div style={{ fontSize: '0.75rem', marginTop: '0.5rem', opacity: 0.6 }}>
-                  25% cheaper than grid rate (₹12/kWh)
+                  33% cheaper than grid rate (₹9/kWh)
                 </div>
               </div>
             </div>
             <p style={{ fontSize: '0.8rem', marginTop: '1rem', opacity: 0.6, borderTop: '1px solid rgba(255, 255, 255, 0.1)', paddingTop: '0.8rem' }}>
-              💡 Realistic Rajasthan tariff based on DISCOM rates. Slab rates increase with consumption to encourage conservation. Pool trading provides 25% savings over grid alternatives.
+              💡 Fixed-rate settlement: pool trading at ₹6/kWh provides a ₹3/kWh saving over grid alternatives.
             </p>
           </div>
 

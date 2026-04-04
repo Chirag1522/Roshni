@@ -318,24 +318,21 @@ export default function AdminPanel({ feederCode }) {
 
       {/* Tariff & Pricing Information */}
       <div className="card">
-        <h3>⚡ Realistic Rajasthan Tariff Model</h3>
+        <h3>⚡ Fixed Tariff Model</h3>
         <p style={{ opacity: 0.8, marginBottom: '1.5rem' }}>
-          ROSHNI uses actual Rajasthan DISCOM slab-based electricity pricing for realistic billing.
+          ROSHNI uses fixed rates for stable real-time matching across buyer and seller dashboards.
         </p>
 
         <div className="grid grid-2">
           <div style={{ background: 'rgba(231, 76, 60, 0.08)', padding: '1rem', borderRadius: '8px', borderLeft: '3px solid #e74c3c' }}>
-            <h4 style={{ marginBottom: '0.8rem', color: '#e74c3c' }}>🔌 Domestic (Residential) Tariff</h4>
+            <h4 style={{ marginBottom: '0.8rem', color: '#e74c3c' }}>🔌 Grid Tariff</h4>
             <div style={{ fontSize: '0.85rem', lineHeight: '1.6' }}>
-              <div><strong>Slab 1:</strong> 0-100 kWh @ ₹3/kWh</div>
-              <div><strong>Slab 2:</strong> 101-200 kWh @ ₹5/kWh</div>
-              <div><strong>Slab 3:</strong> 200+ kWh @ ₹7.95/kWh</div>
+              <div><strong>Grid Unit Rate:</strong> ₹9/kWh</div>
               <div style={{ marginTop: '0.8rem', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '0.8rem' }}>
-                <strong>Fixed Charges:</strong> ₹120-360/month
+                <strong>Fixed Charges:</strong> Configured monthly rate
               </div>
-              <div><strong>Meter Rent:</strong> ₹20/month</div>
-              <div><strong>Electricity Duty:</strong> 3%</div>
-              <div><strong>Surcharge:</strong> 1.5%</div>
+              <div><strong>Admin Fee:</strong> Configured percentage</div>
+              <div><strong>Settlement:</strong> Applied in monthly billing</div>
             </div>
           </div>
 
@@ -344,18 +341,18 @@ export default function AdminPanel({ feederCode }) {
             <div style={{ fontSize: '0.85rem', lineHeight: '1.8' }}>
               <div>
                 <strong>Grid Rate (DISCOM):</strong>
-                <div style={{ opacity: 0.7 }}> Slab-based (₹3-₹7.95/kWh)</div>
+                <div style={{ opacity: 0.7 }}>₹9/kWh (Fixed)</div>
               </div>
               <div style={{ marginTop: '0.8rem' }}>
                 <strong>Pool Rate (P2P Trading):</strong>
-                <div style={{ opacity: 0.7 }}>₹9/kWh (Dynamic)</div>
+                <div style={{ opacity: 0.7 }}>₹6/kWh (Fixed)</div>
               </div>
               <div style={{ marginTop: '0.8rem' }}>
                 <strong>Solar Export Buyback:</strong>
                 <div style={{ opacity: 0.7 }}>₹6.5/kWh</div>
               </div>
               <div style={{ marginTop: '0.8rem', background: 'rgba(39, 174, 96, 0.2)', padding: '0.6rem', borderRadius: '4px' }}>
-                <strong style={{ color: '#27ae60' }}>Savings: 25% off grid rate!</strong>
+                <strong style={{ color: '#27ae60' }}>Savings: ₹3/kWh vs grid!</strong>
               </div>
             </div>
           </div>
@@ -364,15 +361,15 @@ export default function AdminPanel({ feederCode }) {
         <div style={{ marginTop: '1rem', background: 'rgba(52, 152, 219, 0.08)', padding: '1rem', borderRadius: '8px', borderLeft: '3px solid #3498db' }}>
           <h4 style={{ marginBottom: '0.8rem', color: '#3498db' }}>📊 How the Model Works</h4>
           <ol style={{ fontSize: '0.85rem', lineHeight: '1.8', marginLeft: '1rem' }}>
-            <li><strong>Grid Consumption:</strong> Billed at slab-based DISCOM rates (realistic)</li>
-            <li><strong>Pool Purchase:</strong> Consumer pays ₹9/kWh to prosumer (cheaper than grid)</li>
-            <li><strong>Pool Sale:</strong> Prosumer earns ₹9/kWh (vs ₹6.5 grid export rate)</li>
+            <li><strong>Grid Consumption:</strong> Billed at fixed ₹9/kWh</li>
+            <li><strong>Pool Purchase:</strong> Consumer pays ₹6/kWh to prosumer</li>
+            <li><strong>Pool Sale:</strong> Prosumer earns ₹6/kWh (vs ₹6.5 grid export rate)</li>
             <li><strong>Solar Export:</strong> Unsold surplus gets ₹6.5/kWh from DISCOM</li>
             <li><strong>Monthly Settlement:</strong> Bills include taxes, duties, and surcharges</li>
             <li><strong>Blockchain Recording:</strong> All bills hashed and recorded on Algorand for immutability</li>
           </ol>
           <p style={{ fontSize: '0.8rem', marginTop: '1rem', opacity: 0.7, padding: '0.5rem', background: 'rgba(0,0,0,0.3)', borderRadius: '4px' }}>
-            💡 <strong>Rationale:</strong> Progressive slab rates encourage conservation. Pool trading creates a win-win: prosumers earn more, consumers save 25%. DISCOM retains control with settlement authority.
+            💡 <strong>Rationale:</strong> Fixed rates remove pricing drift in live dashboards and keep buyer/seller settlement fully aligned.
           </p>
         </div>
       </div>

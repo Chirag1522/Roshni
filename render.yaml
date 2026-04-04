@@ -60,13 +60,13 @@ services:
       - key: DISCOM_EXPORT_RATE
         value: "3.50"
       - key: DISCOM_GRID_RATE
-        value: "7.50"
+        value: "9.00"
 
       # ============ SOLAR ============
       - key: SOLAR_EXPORT_RATE
         value: "5.80"
       - key: SOLAR_POOL_RATE
-        value: "6.50"
+        value: "6.00"
 
       # ============ IoT ============
       - key: IOT_AUTH_TOKEN

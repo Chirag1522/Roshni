@@ -2,8 +2,8 @@
 IoT Device Service - manages real-time IoT device data
 """
 import logging
-from typing import Dict, Any
-from datetime import datetime, timedelta
+from typing import Dict, Any, Optional
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -74,7 +74,7 @@ class IoTService:
         logger.info(f"[IoTService] ✓ Stored buyer_demand: house={house_id}, demand={demand_kwh}kWh, update_time={current_time_str}")
         logger.debug(f"[IoTService] Full buyer_demand dict: {self.buyer_demand}")
 
-    def get_buyer_demand(self, house_id: str) -> Dict[str, Any]:
+    def get_buyer_demand(self, house_id: str) -> Optional[Dict[str, Any]]:
         """Get current buyer demand for a house."""
         result = self.buyer_demand.get(house_id)
         logger.debug(f"[IoTService] get_buyer_demand({house_id}): found={result is not None}")
@@ -82,7 +82,23 @@ class IoTService:
             logger.debug(f"[IoTService]   Data: {result}")
         return result
 
-    def get_device_status(self, house_id: str) -> Dict[str, Any]:
+    def get_active_buyer_demand(self, house_id: str, max_age_seconds: int = 30) -> float:
+        """Get buyer demand if the latest update is recent enough."""
+        status = self.buyer_demand.get(house_id)
+        if not status:
+            return 0.0
+
+        try:
+            last_update = datetime.fromisoformat(status.get("last_update", "").replace("Z", "+00:00"))
+            age_seconds = (datetime.utcnow() - last_update.replace(tzinfo=None)).total_seconds()
+            if age_seconds <= max_age_seconds:
+                return float(status.get("demand_kwh", 0.0) or 0.0)
+        except Exception:
+            return 0.0
+
+        return 0.0
+
+    def get_device_status(self, house_id: str) -> Optional[Dict[str, Any]]:
         """Get IoT device status for a house."""
         return self.device_status.get(house_id)
 
@@ -100,6 +116,10 @@ class IoTService:
     def get_all_status(self) -> Dict[str, Dict[str, Any]]:
         """Get all device statuses (for debugging)."""
         return self.device_status
+
+    def get_all_buyer_demand(self) -> Dict[str, Dict[str, Any]]:
+        """Get all buyer demand states (for debugging and pool sync)."""
+        return self.buyer_demand
 
     def reset_cumulative(self, house_id: str):
         """Reset cumulative generation for a house (for testing)."""

@@ -5,6 +5,7 @@ Maintains pool state and manages supply/demand balance.
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta, timezone
 import logging
+from typing import Optional
 
 from app.models import (
     Feeder, House, GenerationRecord, DemandRecord,
@@ -38,11 +39,11 @@ class PoolEngine:
         """
         Get current pool state for a feeder.
         Uses latest generation reading per house (not sum of all records).
-        A house is considered active if it sent data in last 2 minutes.
+        A house is considered active if it sent data in the recent live window.
         Includes real-time IoT data from connected devices.
         """
         logger.debug(f"Getting pool state for feeder {feeder_id}")
-        two_min_ago = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(minutes=10)
+        active_window_start = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(seconds=45)
 
         # Get all active houses on this feeder
         houses = self.db.query(House).filter(
@@ -67,7 +68,7 @@ class PoolEngine:
                 # Fallback to latest database record
                 latest = self.db.query(GenerationRecord).filter(
                     GenerationRecord.house_id == house.id,
-                    GenerationRecord.created_at >= two_min_ago,
+                    GenerationRecord.created_at >= active_window_start,
                 ).order_by(GenerationRecord.created_at.desc()).first()
 
                 if latest:
@@ -79,7 +80,7 @@ class PoolEngine:
         recent_allocations = self.db.query(Allocation).join(House).filter(
             House.feeder_id == feeder_id,
             Allocation.source_type == "pool",
-            Allocation.created_at >= two_min_ago,
+            Allocation.created_at >= active_window_start,
         ).all()
         allocated_supply = sum(a.allocated_kwh for a in recent_allocations)
         total_supply = max(0, total_supply - allocated_supply)  # Pool decreases when allocated
@@ -91,6 +92,19 @@ class PoolEngine:
         ).all()
 
         total_demand = sum(d.demand_kwh for d in pending_demand)
+
+        # Include fresh IoT buyer demand so seller and buyer dashboards stay in sync.
+        try:
+            from app.services.iot_service import iot_service
+
+            live_demand = 0.0
+            for house in houses:
+                live_demand += iot_service.get_active_buyer_demand(house.house_id, max_age_seconds=30)
+
+            total_demand = max(total_demand, live_demand)
+        except Exception as e:
+            logger.debug(f"Could not read live IoT demand for feeder {feeder_id}: {e}")
+
         grid_drawdown = max(0, total_demand - total_supply)
 
         # Count today's fulfilled trades for dashboard display
@@ -116,19 +130,14 @@ class PoolEngine:
         logger.info(f"Pool state for feeder {feeder_id}: Supply={total_supply:.2f}, Demand={total_demand:.2f}, Traded={today_fulfilled_kwh:.2f}")
         return result
 
-    def _get_realtime_iot_generation(self, house_id: str) -> float:
+    def _get_realtime_iot_generation(self, house_id: str) -> Optional[float]:
         """Get current generation from IoT devices for pool calculations."""
         try:
-            # Try to get IoT data from a global registry
-            # This avoids circular imports with main.py
-            import sys
-            main_module = sys.modules.get('main')
-            if main_module and hasattr(main_module, 'iot_service'):
-                iot_service = main_module.iot_service
-                # Return current generation for pool supply
-                current = iot_service.get_generation(house_id)
-                if current > 0:
-                    return current
+            from app.services.iot_service import iot_service
+
+            current = iot_service.get_generation(house_id)
+            if current > 0:
+                return current
             return None
         except Exception as e:
             logger.debug(f"Could not get IoT data for {house_id}: {e}")

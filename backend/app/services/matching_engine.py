@@ -55,7 +55,7 @@ class MatchingEngine:
             house_id=house_id,
             allocated_kwh=pool_allocation_kwh,
             source_type="pool" if pool_allocation_kwh > 0 else "grid",
-            status="confirmed",
+            status="completed",
             ai_reasoning=ai_recommendation.get("reasoning", ""),
         )
         self.db.add(allocation)
@@ -81,6 +81,8 @@ class MatchingEngine:
                     reason=f"pool_allocation_{allocation.id}",
                 )
                 if blockchain_result.get("status") == "submitted":
+                    allocation.transaction_hash = blockchain_result.get("tx_id")
+                    self.db.commit()
                     logger.info(
                         f"SUN tokens minted: {pool_allocation_kwh:.2f} SUN → "
                         f"{house.house_id} (TX: {blockchain_result.get('tx_id')})"
@@ -119,7 +121,7 @@ class MatchingEngine:
             return
 
         from datetime import timedelta
-        two_min_ago = datetime.utcnow() - timedelta(minutes=2)
+        seller_window_start = datetime.utcnow() - timedelta(minutes=15)
 
         # Find active generating houses
         active_sellers = []
@@ -132,7 +134,7 @@ class MatchingEngine:
         for h in seller_houses:
             latest = self.db.query(GenerationRecord).filter(
                 GenerationRecord.house_id == h.id,
-                GenerationRecord.created_at >= two_min_ago,
+                GenerationRecord.created_at >= seller_window_start,
             ).order_by(GenerationRecord.created_at.desc()).first()
             if latest:
                 active_sellers.append((h, latest.generation_kwh))

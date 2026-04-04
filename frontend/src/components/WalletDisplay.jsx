@@ -16,7 +16,7 @@ export default function WalletDisplay({ houseId, refreshTrigger = 0 }) {
   }, [houseId, refreshTrigger])
 
   useEffect(() => {
-    const interval = setInterval(fetchWallet, 10000)
+    const interval = setInterval(fetchWallet, 3000)
     return () => clearInterval(interval)
   }, [houseId])
 

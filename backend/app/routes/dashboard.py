@@ -10,6 +10,7 @@ from app.database import get_db
 from app.schemas import DashboardResponse, HouseGenerationSummary, HouseDemandSummary, LivePoolState
 from app.models import House, GenerationRecord, DemandRecord, PoolState
 from app.services.pool_engine import PoolEngine
+from config import settings
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -91,8 +92,16 @@ async def get_dashboard(house_id: str, db: Session = Depends(get_db)):
 
     # Earnings/savings estimate
     # prosumer_type in seed = "seller" | "buyer" (align with your seed data)
-    allocation_earnings = today_gen_kwh * 9.0 if house.prosumer_type in ["seller", "generator", "prosumer"] else 0
-    allocation_savings = today_demand_kwh * 9.0 if house.prosumer_type in ["buyer", "consumer", "prosumer"] else 0
+    allocation_earnings = (
+        today_gen_kwh * settings.solar_pool_rate
+        if house.prosumer_type in ["seller", "generator", "prosumer"]
+        else 0
+    )
+    allocation_savings = (
+        today_demand_kwh * max(0, settings.discom_grid_rate - settings.solar_pool_rate)
+        if house.prosumer_type in ["buyer", "consumer", "prosumer"]
+        else 0
+    )
 
     return DashboardResponse(
         house_id=house_id,

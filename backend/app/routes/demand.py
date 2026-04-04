@@ -9,6 +9,7 @@ from app.database import get_db
 from app.schemas import DemandSubmit, DemandResponse
 from app.models import House, DemandRecord
 from app.services.matching_engine import MatchingEngine
+from config import settings
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -45,7 +46,7 @@ async def submit_demand(data: DemandSubmit, db: Session = Depends(get_db)):
             "grid_kwh": data.demand_kwh,
             "ai_reasoning": "Fallback: matching failed, using grid",
             "estimated_pool_cost_inr": 0,
-            "estimated_grid_cost_inr": data.demand_kwh * 12,  # Assume 12 INR/kWh
+            "estimated_grid_cost_inr": data.demand_kwh * settings.discom_grid_rate,
             "sun_tokens_minted": 0,
             "blockchain_tx": None,
             "allocation_id": None,
