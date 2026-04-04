@@ -24,7 +24,7 @@ export default function AIReasoningConsole({ reasoning, isVisible = true }) {
         setIsTyping(false)
         clearInterval(interval)
       }
-    }, 15) // Typing speed
+    }, 20) // Typing speed
 
     return () => clearInterval(interval)
   }, [reasoning, isVisible])
@@ -42,7 +42,7 @@ export default function AIReasoningConsole({ reasoning, isVisible = true }) {
       <div className="console-body">
         <pre style={{ margin: 0, whiteSpace: 'pre-wrap', wordWrap: 'break-word' }}>
           {displayText}
-          {isTyping && <span style={{ animation: 'blink 1s infinite' }}>▋</span>}
+          {isTyping}
         </pre>
       </div>
     </div>
