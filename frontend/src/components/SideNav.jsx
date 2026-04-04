@@ -31,8 +31,8 @@ export default function SideNav({ isOpen, onClose }) {
         
         <h4 style={{ marginBottom: '1rem', opacity: 0.7 }}>Resources</h4>
         <ul>
-          <li><a href="/docs" target="_blank" rel="noopener noreferrer">📖 Documentation</a></li>
-          <li><a href="https://github.com/roshni/roshni" target="_blank" rel="noopener noreferrer">🐙 GitHub</a></li>
+          
+          <li><a href="https://github.com/Khushi-Chaudhary04/roshni" target="_blank" rel="noopener noreferrer">📖 GitHub</a></li>
         </ul>
 
         <hr style={{ margin: '2rem 0', opacity: 0.2 }} />
