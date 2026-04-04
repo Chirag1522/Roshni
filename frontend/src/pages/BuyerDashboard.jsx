@@ -176,11 +176,11 @@ export default function BuyerDashboard({ houseId }) {
         {/* Allocation breakdown bar */}
         {allocation && (
           <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', marginBottom: '0.3rem', opacity: 0.7 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.4rem', marginBottom: '0.3rem', opacity: 0.7 }}>
               <span>Energy Source Breakdown</span>
               <span>{allocationRate.toFixed(0)}% Pool | {gridDependency.toFixed(0)}% Grid</span>
             </div>
-            <div style={{ height: '20px', background: 'rgba(255,255,255,0.1)', borderRadius: '5px', overflow: 'hidden', display: 'flex' }}>
+            <div style={{ height: '40px', background: 'rgba(255,255,255,0.1)', borderRadius: '5px', overflow: 'hidden', display: 'flex' }}>
               <div style={{
                 width: `${allocationRate}%`,
                 background: 'linear-gradient(90deg, #2ecc71, #27ae60)',
